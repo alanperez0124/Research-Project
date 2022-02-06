@@ -1,0 +1,29 @@
+1. In our paper, the 2-opt method is said to exchange customers from part 1 
+    and part 2. So how are we meant to implement it in our simulated 
+    annealing algorithm??
+
+    So we can create a condition statement that checks to see if our Part 2
+    has anything in it besides -1. Then based on this, 
+
+2.  
+
+
+NOTES
+- We don't have to worry about parts 3 and 4 having 0 in the vectors 
+  because they use indexing which seems to start at 1. The significance is
+  that when looking at soln.anPart1(iReconveneIndex), we don't have to add 
+  +1 inside the parenthesis. 
+
+- It is my belief that we don't need to calculate the departure time of the 
+  drone because that all depends on whether the truck gets there first or 
+  second. 
+
+
+
+aafDistances =
+
+         0    8.2462    6.7082    7.6158         0
+    8.2462         0    2.2361   15.0333    8.2462
+    6.7082    2.2361         0   13.0000    6.7082
+    7.6158   15.0333   13.0000         0    7.6158
+         0    8.2462    6.7082    7.6158         0
