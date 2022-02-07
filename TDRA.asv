@@ -453,7 +453,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
     plot(C0.x, C0.y, 'bo')
     plot(afXGoodData, afYDataPositive, 'r-')
     plot(afXGoodData, afYDataNegative, 'r-')
-    hold off; 
+%     hold off; 
     
     % Given a customer point (xi, yi), find the point (x, y) on an ellipse
     % that minimizes the distance between (xi, yi) and (x, y)
@@ -477,21 +477,30 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    for iCustomer = 1 : length(C0.x)
        % Set initial guess
        %               x         ,        y       , lambda
-       fGuess = [ C0.x(iCustomer), C0.y(iCustomer), 0 ];
+       afGuess = [ C0.x(iCustomer); C0.y(iCustomer); 0 ];
        
-       [ ae_vals, k, x_vals ] = ... 
-           newtons_method( nMax, fGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, iCustomer);
-                                                
+       [ ae_vals, k, aUnknowns ] = ... 
+           newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, iCustomer);
+       
+       % Plot the point
+       plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
+       
+       
+       % Final Output Lines
+       fprintf("\n")
+    fprintf("Final Output Line for Part (a)\n")
+    fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
+    fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
 
    end
 end
 
-function[ ae_vals, k, x_vals ] = newtons_method( nMax, fGuess, fThreshold, h, h_jacobian, a, C0 )
+function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
 % Newton's method will approximate the roots of our function h. For this
 % particular problem, h is the gradient of our distance formula. 
 % Input
 %   nMax               The maximum number of iterations
-%   fGuess             Our initial guess
+%   afGuess             Our initial guess
 %   fThreshold         The threshold for convergence
 %   h                  The function we are trying to find the root of 
 %   h_jacobian         The jacobian of function h
@@ -506,11 +515,40 @@ function[ ae_vals, k, x_vals ] = newtons_method( nMax, fGuess, fThreshold, h, h_
     % Local Variables
     %  k           Number of iterations it took to converge
     %  e           The error value
+    %  aUnknowns   Array of unknowns we are trying to find
     
     % Initialize k values and error value e
     k = 1; 
-    e = 99;   
-
+    e = 99;   % absurd error value
+    
+    % Create variables for the x and y coordinates of the customers
+    xi = C0.x(iCustomer); 
+    yi = C0.y(iCustomer); 
+    
+    
+    % Initialize vector to hold the updating x, y, and lambda values and
+    % vector for e values
+    aUnknowns = zeros(3, nMax); 
+    ae_vals = zeros(1, nMax); 
+    aUnknowns(:, 1) = afGuess; 
+    ae_vals(1) = e; 
+    
+    % Run Newton's Method for the vector case
+    while k < nMax + 2 && ae_vals(k) > fThreshold
+        aUnknowns(:, k+1) = aUnknowns(:, k) - ... 
+            h_jacobian(a, aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi) \ ...
+            h(a, aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi ); 
+        
+        % Calculate the error
+        ae_vals(k+1) = norm( aUnknowns(1, k+1) - aUnknowns(2, k) );
+        
+        % Print k, the error and the value
+        fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
+        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-1, ae_vals(k+1), aUnknowns(1, k+1), aUnknowns(2, k+1), aUnknowns(3, k+1))
+        
+        % Update k 
+        k = k + 1; 
+    end
 end
 
 function[ sPrime ] = neighbor( soln )

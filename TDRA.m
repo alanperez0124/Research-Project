@@ -453,7 +453,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
     plot(C0.x, C0.y, 'bo')
     plot(afXGoodData, afYDataPositive, 'r-')
     plot(afXGoodData, afYDataNegative, 'r-')
-    hold off; 
+%     hold off; 
     
     % Given a customer point (xi, yi), find the point (x, y) on an ellipse
     % that minimizes the distance between (xi, yi) and (x, y)
@@ -464,11 +464,12 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
     fThreshold = 10^(-6);
     
     % Hard code the function and its jacobian
-    h = @(a, x, y, lambda, xi, yi) [ 2*x - 2*xi + 2*a(1)*x*lambda + a(2)*lambda*y + a(4)*lambda; 
-                             2*y - 2*yi + a(2)*lambda*x + 2*a(3)*lambda*y + a(5)*lambda; 
-                             a(1)*x^2 + a(2)*x*y + a(3)*y^2 + a(4)*x + a(5)*y + a(6) ];
+    h = @(x, y, lambda, xi, yi, a) ...
+        [ 2*x - 2*xi + 2*a(1)*x*lambda + a(2)*lambda*y + a(4)*lambda; 
+          2*y - 2*yi + a(2)*lambda*x + 2*a(3)*lambda*y + a(5)*lambda; 
+          a(1)*x^2 + a(2)*x*y + a(3)*y^2 + a(4)*x + a(5)*y + a(6) ];
 
-    h_jacobian = @(a, x, y, lambda, xi, yi) ...
+    h_jacobian = @(x, y, lambda, xi, yi, a) ...
         [ 2 + 2*a(1)*lambda, a(2)*lambda, 2*a(1)*x + a(2)*y + a(4); 
           a(2)*lambda, 2 + 2*a(3)*lambda, a(2)*x + 2*a(3)*y + a(5); 
           2*a(1)*x + a(2)*y + a(4), a(2)*x + 2*a(3)*y + a(5), 0 ];
@@ -482,13 +483,17 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
        [ ae_vals, k, aUnknowns ] = ... 
            newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, iCustomer);
        
+       % Plot the point
+       plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
+       
+       
        % Final Output Lines
        fprintf("\n")
-    fprintf("Final Output Line for Part (a)\n")
-    fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
-    fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
-
+        fprintf("Final Output Line for Part (a)\n")
+        fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
+        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
    end
+   hold off; 
 end
 
 function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
@@ -496,7 +501,7 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
 % particular problem, h is the gradient of our distance formula. 
 % Input
 %   nMax               The maximum number of iterations
-%   afGuess             Our initial guess
+%   afGuess            Our initial guess
 %   fThreshold         The threshold for convergence
 %   h                  The function we are trying to find the root of 
 %   h_jacobian         The jacobian of function h
@@ -506,12 +511,13 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
 % Output
 %   ae_vals            Array of error values
 %   k                  Number of iterations
-%   x_vals             Our possible roots
+%   aUnknowns          Array of unknowns we are trying to find
 
     % Local Variables
     %  k           Number of iterations it took to converge
     %  e           The error value
-    %  aUnknowns   Array of unknowns we are trying to find
+    %  xi          x coordinate of the customers
+    %  yi          y coordinate of the customers
     
     % Initialize k values and error value e
     k = 1; 
@@ -520,7 +526,6 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
     % Create variables for the x and y coordinates of the customers
     xi = C0.x(iCustomer); 
     yi = C0.y(iCustomer); 
-    
     
     % Initialize vector to hold the updating x, y, and lambda values and
     % vector for e values
@@ -532,15 +537,15 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
     % Run Newton's Method for the vector case
     while k < nMax + 2 && ae_vals(k) > fThreshold
         aUnknowns(:, k+1) = aUnknowns(:, k) - ... 
-            h_jacobian(a, aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi) \ ...
-            h(a, aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi ); 
+            h_jacobian(aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi, a) \ ...
+            h(aUnknowns(1, k), aUnknowns(2, k), aUnknowns(3, k), xi, yi, a ); 
         
         % Calculate the error
-        ae_vals(k+1) = norm( aUnknowns(1, k+1) - aUnknowns(2, k) );
+        ae_vals(k+1) = norm( aUnknowns(:, k+1) - aUnknowns(:, k) );
         
         % Print k, the error and the value
         fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
-        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-1, ae_vals(k+1), aUnknowns(1, k+1), aUnknowns(2, k+1), aUnknowns(3, k+1)
+        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-1, ae_vals(k+1), aUnknowns(1, k+1), aUnknowns(2, k+1), aUnknowns(3, k+1))
         
         % Update k 
         k = k + 1; 
