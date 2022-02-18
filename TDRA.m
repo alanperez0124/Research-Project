@@ -32,8 +32,8 @@ function[] = TDRA( )
     
     
     % Generate customer locations
-    x = (50 - -50)*rand(1, 4) + -50;
-    y = (50 - -50)*rand(1, 4) + -50;
+%     C0.x = (50 - -50)*rand(1, 4) + -50;
+%     C0.y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
 %     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
