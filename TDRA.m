@@ -474,6 +474,10 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
           a(2)*lambda, 2 + 2*a(3)*lambda, a(2)*x + 2*a(3)*y + a(5); 
           2*a(1)*x + a(2)*y + a(4), a(2)*x + 2*a(3)*y + a(5), 0 ];
       
+   % Initialize ellipse points
+   afEllipse.x = [];
+   afEllipse.y = [];
+   
    % Estimate the root of a function h(x) for each customer
    for iCustomer = 1 : length(C0.x)
        % Set initial guess
@@ -486,14 +490,25 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
        % Plot the point
        plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
        
+       % Store the ellipse point
+       afEllipse.x(end + 1) = aUnknowns(1, k-1)
+       afEllipse.y(end + 1) = aUnknowns(2, k-1)
+       
        
        % Final Output Lines
-       fprintf("\n")
-        fprintf("Final Output Line for Part (a)\n")
-        fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
-        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
+%        fprintf("\n")
+%         fprintf("Final Output Line for Part (a)\n")
+%         fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
+%         fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
    end
-   hold off; 
+   
+   
+   % Connect the customers to the point on the ellipse
+   plot( [ C0.x; afEllipse.x], [ C0.y; afEllipse.y ], 'b-')   
+   hold off;  % end the plot
+   
+   
+   
 end
 
 function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
@@ -544,8 +559,8 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
         ae_vals(k+1) = norm( aUnknowns(:, k+1) - aUnknowns(:, k) );
         
         % Print k, the error and the value
-        fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
-        fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-1, ae_vals(k+1), aUnknowns(1, k+1), aUnknowns(2, k+1), aUnknowns(3, k+1))
+%         fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
+%         fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-1, ae_vals(k+1), aUnknowns(1, k+1), aUnknowns(2, k+1), aUnknowns(3, k+1))
         
         % Update k 
         k = k + 1; 
