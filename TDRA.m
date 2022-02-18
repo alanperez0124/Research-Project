@@ -32,8 +32,8 @@ function[] = TDRA( )
     
     
     % Generate customer locations
-%     x = (50 - -50)*rand(1, 4) + -50;
-%     y = (50 - -50)*rand(1, 4) + -50;
+    x = (50 - -50)*rand(1, 4) + -50;
+    y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
 %     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
@@ -44,8 +44,8 @@ function[] = TDRA( )
     
 % %          0  1  2  3  4  0   Customer ID
 % %          1  2  3  4  5  6   Indices
-    C0.x = [ 0  8  6 -7  1  0 ];
-    C0.y = [ 0 -2 -3 -3  2  0 ];
+%     C0.x = [ 0  8  6 -7  1  0 ];
+%     C0.y = [ 0 -2 -3 -3  2  0 ];
 
 %              0  1  2  3  4  5  6  0  Customer ID
 %              1  2  3  4  5  6  7  8  Indices
@@ -140,7 +140,7 @@ function[] = TDRA( )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % Plot the truck and drone route
-%     plot_route( C0, s);
+    plot_route( C0, s);
     
     
     % Initialize best solution, the rsult of the best solution, the 
@@ -481,7 +481,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    % Initialize vector of distances
    afDistanceFromEllipse = zeros(1, length(C0.x)-2); 
     
-   solnIn 
    
    % ALAN FIX THIS: 
    %#"Instead of iterating through the length of the arrays, iterate through
@@ -492,8 +491,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    for nCustomer = solnIn.anPart1(2 : end - 1)
        % Set initial guess
        %                  x                y        lambda
-       C0.x(nCustomer+1)
-       C0.y(nCustomer+1)
        afGuess = [ C0.x(nCustomer + 1); C0.y(nCustomer + 1); 0 ]; 
        
        
@@ -505,13 +502,20 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
        plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
        
        % Store the ellipse point
-       afEllipse.x(end+1) = aUnknowns(1, k-1);
-       afEllipse.y(end+1) = aUnknowns(2, k-1); 
+       afEllipse.x = aUnknowns(1, k-1);
+       afEllipse.y = aUnknowns(2, k-1); 
        
        % Calculate the distance between customers and closest pt on ellipse
        afDistanceFromEllipse( nCustomer ) = sqrt( (afEllipse.x(end) - C0.x(nCustomer+1))^2 + ...
            (afEllipse.y(end) - C0.y(nCustomer+1))^2 );
        
+       % Plot those thangs 
+       plot( [ C0.x(nCustomer+1); afEllipse.x ], [C0.y(nCustomer+1); afEllipse.y], 'b-' )
+%        [ C0.x(nCustomer); afEllipse.x ]
+% %        for i = 1 : length(C0.x)
+% %            plot( [ C0.x(nCustomer+1); afEllipse.x(nCustomer) ], [C0.y(nCustomer+1); afEllipse.y(nCustomer)], 'b-' )
+% %        end
+% %        hold off; 
              
               % Final Output Lines
 %        fprintf("\n")
@@ -520,15 +524,9 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
 %         fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
        
    end
-
-   afDistanceFromEllipse
-   
-   
-
-   % Connect the customers to the point on the ellipse
-   
-   plot( [ C0.x(2 : end-1); afEllipse.x], [ C0.y( 2 : end-1); afEllipse.y ], 'b-')   
-   hold off;  % end the plot
+    
+   hold off;
+   afDistanceFromEllipse;
    
    
    % Sort the customer in descending order from distance to the ellipse
