@@ -13,12 +13,10 @@ function[ ] = test_components()
     data2 = [ 1 2 3 4;     % 
               1 2 3 4];    % y values of data 2 
        
-    figure("blah")
+    figure(1)
     hold on; 
     for i = 1 : length(data1(1, :))
-        plot( [ data1(1, i); data2(1, i) ], [ data1(2, i); data2(2, i) ] )
-    end
-    hold off; 
+        plot( [ data1(1, i)]; data2(1, i) ], [da
     
 %     for i = 1 : length(data1(1, :))
 %         plot(data1(1, i), data1(2, i), 'ro')
