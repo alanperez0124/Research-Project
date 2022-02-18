@@ -488,45 +488,56 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    % solnIn.anPart1 (the customers themselves duhhhh)
    
    % I am refactoring ;D
-   
    for nCustomer = solnIn.anPart1(2 : end - 1)
        % Set initial guess
        %                  x                y        lambda
-       C0.x(nCustomer+1)
-       C0.y(nCustomer+1)
-       afGuess = [ C0.x(nCustomer + 1); C0.y(nCustomer + 1); 0 ]; 
-       
+       afGuess = [ C0.x(nCustomer); C0.y(nCustomer); 0 ]; 
        
        % Get the unknowns
        [ ae_vals, k, aUnknowns ] = ... 
-           newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, nCustomer+1);
+           newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, nCustomer);
+       
+       % Plot the point on the ellipse
+       plot(aUnknowns(1, k-1), 
+   end
+   
+   
+   
+   % Estimate the root of a function h(x) for each customer
+   for iCustomer = 2 : length(C0.x) - 1
+       % Set initial guess
+       %               x         ,        y       , lambda
+       afGuess = [ C0.x(iCustomer); C0.y(iCustomer); 0 ];
+       
+       [ ae_vals, k, aUnknowns ] = ... 
+           newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, iCustomer);
        
        % Plot the point on the ellipse
        plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
        
+       
        % Store the ellipse point
-       afEllipse.x(end+1) = aUnknowns(1, k-1);
-       afEllipse.y(end+1) = aUnknowns(2, k-1); 
+       afEllipse.x(end + 1) = aUnknowns(1, k-1);
+       afEllipse.y(end + 1) = aUnknowns(2, k-1);
        
        % Calculate the distance between customers and closest pt on ellipse
-       afDistanceFromEllipse( nCustomer ) = sqrt( (afEllipse.x(end) - C0.x(nCustomer+1))^2 + ...
-           (afEllipse.y(end) - C0.y(nCustomer+1))^2 );
+       solnIn.anPart1(iCustomer)
+       afDistanceFromEllipse( solnIn.anPart1(iCustomer) ) = sqrt( (afEllipse.x(end) - C0.x(solnIn.anPart1(iCustomer+1)+1))^2 +...
+           (afEllipse.y(end) - C0.y(solnIn.anPart1(iCustomer+1)+1))^2 );
+%        afDistanceFromEllipse( solnIn.anPart1(iCustomer-1) + 1 ) = sqrt( (afEllipse.x(end) - C0.x(solnIn.anPart1(iCustomer+1)+1))^2 +...
+%            (afEllipse.y(end) - C0.y(solnIn.anPart1(iCustomer+1)+1))^2 );
        
-             
-              % Final Output Lines
+       afDistanceFromEllipse
+       
+       % Final Output Lines
 %        fprintf("\n")
 %         fprintf("Final Output Line for Part (a)\n")
 %         fprintf("Current k    |      e^(k+1)     |      x^(k+1)\n" );
 %         fprintf("  %4d       |   %10.10f   |   [ %2.6f ; %2.6f; %2.6f ]   \n", k-2, ae_vals(k-1), aUnknowns(1, k-1), aUnknowns(2, k-1), aUnknowns(3, k-1))
-       
    end
-
-   afDistanceFromEllipse
-   
    
 
    % Connect the customers to the point on the ellipse
-   
    plot( [ C0.x(2 : end-1); afEllipse.x], [ C0.y( 2 : end-1); afEllipse.y ], 'b-')   
    hold off;  % end the plot
    
