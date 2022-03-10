@@ -2,8 +2,10 @@ function[ ] = test_components()
     
 
     a = [1 2 3 4 5];
-    a(2 : end - 1)
     
+    a(2) = [];
+    
+    a
     
     % LET THIS BE CUSTOMERS
     data1 = [ 2 3  4  5;     % x values of data 1

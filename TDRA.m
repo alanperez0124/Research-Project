@@ -49,8 +49,8 @@ function[] = TDRA( )
 
 %              0  1  2  3  4  5  6  0  Customer ID
 %              1  2  3  4  5  6  7  8  Indices
-%     C0.x = [ 0 -2 -3  2  2  7 -4  0 ]; 
-%     C0.y = [ 0  4  1  4  3  1  3  0 ]; 
+    C0.x = [ 0 -2 -3  2  2  7 -4  0 ]; 
+    C0.y = [ 0  4  1  4  3  1  3  0 ]; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%Testing ellipse fitting %%%%%%%%%%%%%%%%%%%%%%%%
 % Slanted ellipse
@@ -363,6 +363,8 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
     %    g        Anonymous function for distance from point to conic
     %    h        Anonymous function for distance between two points
     % aVectorScaled  The parameters that create our ellipse
+    % anSortedTruckCustomers   Vector of truck customers sorted by distance
+    %                          to ellipse
     
     
     % Create matrix of distances
@@ -481,13 +483,8 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    % Initialize vector of distances
    afDistanceFromEllipse = zeros(1, length(C0.x)-2); 
     
-   
-   % ALAN FIX THIS: 
-   %#"Instead of iterating through the length of the arrays, iterate through
-   % solnIn.anPart1 (the customers themselves duhhhh)
-   
-   % I am refactoring ;D
-   
+    
+   %Instead of iterating through the length of the arrays, iterate through   
    for nCustomer = solnIn.anPart1(2 : end - 1)
        % Set initial guess
        %                  x                y        lambda
@@ -532,12 +529,56 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    % Sort the customer in descending order from distance to the ellipse
    afDistanceFromEllipse
    [ afSortedDistances, anSortedTruckCustomers ] = sort( afDistanceFromEllipse, 2, "descend" );
-   
+
    afSortedDistances
    anSortedTruckCustomers
    
-   
-   
+    
+    % Now we start looping until no feasible position is available for
+    % customers in the list for re-insertion in UAV routes
+    feasible = 1;  %
+    temp_counter = 0;     % this temporary counter will eventually be removed, 
+                          % it is taking place of the feasibility thing
+    solnIn
+    while temp_counter < 40
+        
+        for i = 1 : length(anSortedTruckCustomers)
+            
+            % Store the index of customer i in anSortedTruckCustomers
+            jCust = anSortedTruckCustomers(i);  % customer index at index i in anSortedTruckCustomers
+            
+            % Select customer c_j in the list & remove it from truck route
+            
+            %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
+            solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
+            solnIn.anPart3 = [ 1 6 -1 2 3 6];
+            solnIn.anPart2 = [11 1 -1 12 4 2];
+            solnIn.anPart4 = [3 7 -1 3 6 7];
+            solnIn
+            jCust = 8  % This is the customer we will be removing
+            %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
+            
+            solnOut = soln_remove_truck_customer(solnIn, jCust);
+            
+            % Try inserting jCustomer into all possible spots in the truck routes
+%             for i = 1 : soln
+%             
+%             for Drone
+%                 for leavingStop % = 1 : LENGTH(PART1)
+%                     for returning stop   % Where the returning stop must come AFTER THE LEAVING STOP; = L.S. + 1 : length(part1)
+%                     end
+%                 end
+%             end
+%             
+%             
+        end
+%         
+        temp_counter = temp_counter + 1;
+        
+        
+    end
+
+
 end
 
 function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
@@ -594,6 +635,55 @@ function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h
         % Update k 
         k = k + 1; 
     end
+end
+
+function[ solnOut ] = soln_remove_truck_customer(solnIn, jCust)
+% The soln_remove_truck_Customer function takes in a solution structure and
+% the customer j that we will be removing from the truck route. It will
+% first loop over soln.anPart1 to find jCust. Then it will "remove him" by
+% esentially shifting everyone in solnIn.anPart1 after him down by 1. 
+% Input
+%  solnIn     The solution we are currently working with
+%  jCust      The customer we will be removing from part 1 of solnIn
+% Output
+%  solnOut    The resulting solution
+
+    % Local variables
+    %  iCustomer     counter variable to keep track of the customer index
+    %  
+    
+    % Loop over soln.anPart1 to find jCust
+    for iCustomer = 1 : length(solnIn.anPart1)
+        if solnIn.anPart1(iCustomer) == jCust
+            jCustIndex = iCustomer; 
+        end
+    end
+    
+    % Remove jCust and shift everyone down
+    solnIn.anPart1(jCustIndex) = [];
+    solnIn.anPart1
+
+    % Shift things in part 3 and part 4 that are after the removal slot
+    % down by 1
+    nDroneCounter = 1; 
+    for nIndex = 1 : length(solnIn.anPart3)
+        if solnIn.anPart3(nIndex) < 0
+            nDroneCounter = nDroneCounter + 1;
+            
+        else
+            if solnIn.anPart3(nIndex) > jCustIndex  % "if it comes after"
+                solnIn.anPart3(nIndex) = solnIn.anPart3(nIndex) - 1;  
+            end
+            
+            if solnIn.anPart4(nIndex) > jCustIndex
+                solnIn.anPart4(nIndex) = solnIn.anPart4(nIndex) - 1; 
+            end
+        end
+    end
+    
+    % Return the solnOut
+    solnOut = solnIn; 
+  
 end
 
 function[ sPrime ] = neighbor( soln )
