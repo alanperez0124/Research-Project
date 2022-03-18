@@ -344,7 +344,7 @@ function[ s_best ] = ...
     
 end
 
-function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
+function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 % The ellipticalCustomerAssignment heuristic function will take in a soln
 % and then will return another solution. 
 
@@ -365,6 +365,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
     % aVectorScaled  The parameters that create our ellipse
     % anSortedTruckCustomers   Vector of truck customers sorted by distance
     %                          to ellipse
+    % aafDistances  Get the distances between all the points
     
     
     % Create matrix of distances
@@ -533,32 +534,61 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k)
    afSortedDistances
    anSortedTruckCustomers
    
-    
+   
+   % Get the distance matrix (the distances between all the points)
+   aafDistances = calculateDistances(C0.x, C0.y); 
+   
+   
     % Now we start looping until no feasible position is available for
     % customers in the list for re-insertion in UAV routes
     feasible = 1;  %
     temp_counter = 0;     % this temporary counter will eventually be removed, 
                           % it is taking place of the feasibility thing
-    solnIn
+                          
     while temp_counter < 40
-        
         for i = 1 : length(anSortedTruckCustomers)
             
             % Store the index of customer i in anSortedTruckCustomers
             jCust = anSortedTruckCustomers(i);  % customer index at index i in anSortedTruckCustomers
             
             % Select customer c_j in the list & remove it from truck route
+            solnRemovedCustomer = soln_remove_truck_customer(solnIn, jCust);
+
+%             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
+%             solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
+%             solnIn.anPart3 = [ 1 6 -1 2 3 6];
+%             solnIn.anPart2 = [11 1 -1 12 4 2];
+%             solnIn.anPart4 = [3 7 -1 3 6 7];
+%             solnIn
+%             jCust = 8  % This is the customer we will be removing
+%             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
             
-            %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
-            solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
-            solnIn.anPart3 = [ 1 6 -1 2 3 6];
-            solnIn.anPart2 = [11 1 -1 12 4 2];
-            solnIn.anPart4 = [3 7 -1 3 6 7];
-            solnIn
-            jCust = 8  % This is the customer we will be removing
-            %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
+            for iTruckStop = 2 : length(solnIn.anPart1)
+                % Insert the customer in the truck route
+                insertedSoln = soln_insert_truck_customer(solnRemovedCustomer, jCust, iTruckStop);
+                
+                
+                % Check feasibility 
+                
+                
+                % Calculate the total waiting time
+                fWaitingTime = f( aafDistances, insertedSoln, k ); 
+            end
             
-            solnOut = soln_remove_truck_customer(solnIn, jCust);
+            for iDrone = 1 : k
+                for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
+                    for iStopReturn = iStopLeave : length(solnRemovedCustomer.anPart1)
+                        % Insert the customer in the truck route
+                        insertedDroneSoln = ... 
+                            soln_add_drone_customer(solnRemovedCustomer, jCust, iDrone, iStopLeave, iStopReturn)
+                    end
+                end
+            end
+            
+            % Insert the customer into every drone route
+            nDrone = 1; 
+            
+            
             
             % Try inserting jCustomer into all possible spots in the truck routes
 %             for i = 1 : soln
@@ -684,6 +714,108 @@ function[ solnOut ] = soln_remove_truck_customer(solnIn, jCust)
     % Return the solnOut
     solnOut = solnIn; 
   
+end
+
+function[ solnOut ] = soln_insert_truck_customer(solnIn, jCust, iStop)
+% The soln_insert_truck_customer method will take in the solution, the
+% jCustomer we will be inserting, and the place where the truck will be
+% inserted. 
+% Inputer
+%    solnIn    The input solution
+%    jCust     the customer that will be inserted
+%    iStop     Where the truck will be placed
+
+    % Local Variables
+    %
+    
+    % Initialize the out solution 
+    solnOut = solnIn;
+    
+    % First insert values 1 to iStop - 1
+    solnOut.anPart1 = solnIn.anPart1(1 : iStop - 1);
+    
+    % Next insert jCust
+    solnOut.anPart1(iStop) = jCust; 
+    
+    % Next insert the remaining values iStop to the end of the array
+    solnOut.anPart1 = [ solnOut.anPart1 solnIn.anPart1(iStop : end)]; 
+    
+    % Update anPart3 and anPart4
+    nDroneCounter = 1; 
+    for nIndex = 1 : length(solnIn.anPart3)
+        if solnIn.anPart3(nIndex) < 0
+            nDroneCounter = nDroneCounter + 1; 
+        else
+            if solnIn.anPart3(nIndex) >= iStop
+                solnOut.anPart3(nIndex) = solnIn.anPart3(nIndex) + 1; 
+            end
+            
+            if solnIn.anPart4(nIndex) >= iStop
+                solnOut.anPart4(nIndex) = solnIn.anPart4(nIndex) + 1; 
+            end
+        end
+    end             
+end
+
+function[ solnOut ] = soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave, iStopReturn)
+% soln_add_drone_customer will take in the current solution data structure,
+% the customer we will be including, the drone that will be delivering to
+% it as well as where the drone will be departing from and arriving to. 
+% Input
+%  solnIn       Current solution
+%  jCust        Customer we are inserting
+%  iDrone       The drone that will be delivering to that customer
+%  iStopLeave   The index from which the drone will be leaving (based off
+%                of the indices from soln.anPart1) 
+%  iStopReturn  The index where the drone will be returning (also based off
+%                of the indices from soln.anPart1)
+
+% Output
+%  solnOut      The resutling solution. 
+
+    % Local variable
+    % iPart3Drone     The drone we are currently looking at in part 3
+    
+    
+    % Find the drone we are looking for in solnIn.anPart3
+    iPart3Drone = 1;  
+                       
+    nDroneCounter = 1;
+    
+    solnIn
+    while (nDroneCounter ~= iDrone)
+        % If we hit a separator (-1) increment the drone
+        if (solnIn.anPart3(iPar3Drone) == -1)
+            nDroneCounter = nDroneCounter + 1; 
+        end
+        iPart3Drone = iPart3Drone + 1; 
+    end
+    
+    
+    % Look for where iStopLeave fits in solnIn.anPart3 (start from
+    % iPart3Drone)
+    bPlaced = 0;
+    iLeavePlacement = iPart3Drone; 
+    while (~bPlaced)
+        if (solnIn.anPart3(iLeavePlacement) < iStopLeave)
+            % Then we place it there
+            bPlaced = 1; 
+        else
+            % We iterate through
+            iLeavePlacement = iLeavePlacement + 1; 
+        end
+        
+    end
+    
+    
+    
+    % 
+    
+    
+            
+            
+    
+        
 end
 
 function[ sPrime ] = neighbor( soln )
