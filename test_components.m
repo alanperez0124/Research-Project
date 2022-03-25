@@ -1,11 +1,12 @@
 function[ ] = test_components()
     
 
-    a = [1 2 3 4 5];
+    a.a = [1, 2, 3]; 
+    a.b = [4, 5, 6];
     
-    x = 3
-    x == 4
-   
+    a.a(end+1) = 0
+    
+    a.a
     
 %     test.anPart1 = a(2 : 4);
 %     test

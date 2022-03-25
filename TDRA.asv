@@ -150,6 +150,7 @@ function[] = TDRA( )
     
     
     % Elliptical stuff
+    u
     solnOut = ellipticalCustomerAssignment( s_best, C0, u);
     
     
@@ -351,6 +352,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 % INPUT
 %  solnIn      This is the input solution
 %  C0          The locations (coordinates) of the customers
+%  k           Number of drones
 % OUTPUT
 %  solnOut     This is the output solution
 
@@ -484,7 +486,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
    % Initialize vector of distances
    afDistanceFromEllipse = zeros(1, length(C0.x)-2); 
     
-    
    %Instead of iterating through the length of the arrays, iterate through   
    for nCustomer = solnIn.anPart1(2 : end - 1)
        % Set initial guess
@@ -493,15 +494,15 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
        
        
        % Get the unknowns
-       [ ae_vals, k, aUnknowns ] = ... 
+       [ ae_vals, j, aUnknowns ] = ... 
            newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, aVectorScaled, C0, nCustomer+1);
        
        % Plot the point on the ellipse
-       plot(aUnknowns(1, k-1), aUnknowns(2, k-1), 'ko')
+       plot(aUnknowns(1, j-1), aUnknowns(2, j-1), 'ko')
        
        % Store the ellipse point
-       afEllipse.x = aUnknowns(1, k-1);
-       afEllipse.y = aUnknowns(2, k-1); 
+       afEllipse.x = aUnknowns(1, j-1);
+       afEllipse.y = aUnknowns(2, j-1); 
        
        % Calculate the distance between customers and closest pt on ellipse
        afDistanceFromEllipse( nCustomer ) = sqrt( (afEllipse.x(end) - C0.x(nCustomer+1))^2 + ...
@@ -544,7 +545,8 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
     feasible = 1;  %
     temp_counter = 0;     % this temporary counter will eventually be removed, 
                           % it is taking place of the feasibility thing
-                          
+           
+
     while temp_counter < 40
         for i = 1 : length(anSortedTruckCustomers)
             
@@ -575,6 +577,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                 fWaitingTime = f( aafDistances, insertedSoln, k ); 
             end
             
+            
             for iDrone = 1 : k
                 for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
                     for iStopReturn = iStopLeave : length(solnRemovedCustomer.anPart1)
@@ -584,6 +587,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                     end
                 end
             end
+            
             
             % Insert the customer into every drone route
             nDrone = 1; 
@@ -778,14 +782,16 @@ function[ solnOut ] = soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave,
     
     
     % Find the drone we are looking for in solnIn.anPart3
-    iPart3Drone = 1;  
-                       
+    iPart3Drone = 1;                   
     nDroneCounter = 1;
+    
+    % Initialize the solnOut
+    solnOut = solnIn; 
     
     solnIn
     while (nDroneCounter ~= iDrone)
         % If we hit a separator (-1) increment the drone
-        if (solnIn.anPart3(iPar3Drone) == -1)
+        if (solnOut.anPart3(iPart3Drone) == -1)
             nDroneCounter = nDroneCounter + 1; 
         end
         iPart3Drone = iPart3Drone + 1; 
@@ -795,16 +801,74 @@ function[ solnOut ] = soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave,
     % Look for where iStopLeave fits in solnIn.anPart3 (start from
     % iPart3Drone)
     bPlaced = 0;
+    iLeavePlacement = iPart3Drone; 
     while (~bPlaced)
-        if (solnIn.anPart3(iPart3Drone) < solnIn.
+        
+        iLeavePlacement
+        iDrone
+        nDroneCounter
+        
+        % In the case that we want to assign drone n a customer, but there
+        % are currently no drone n customers
+        if iLeavePlacement > length(solnIn.anPart3)
+            % Insert placeholder slot
+            solnIn.anPart3(end + 1) = 0;
+            solnIn.anPart2(end + 1) = 0; 
+            solnIn.anPart4(end + 1) = 0; 
+        end
+        
+        solnIn
+            
+        if (solnIn.anPart3(iLeavePlacement) < iStopLeave)
+            % Then we place it in index iLeavePlacement
+            bPlaced = 1; 
+            
+        else
+            % We iterate through
+            iLeavePlacement = iLeavePlacement + 1; 
+
+        end
     end
     
     
+    % Shift oclumns in Part 3 up by 1
+    % Shift the columns at & abova where it goes to the right by 1
+    solnOut.anPart3 = solnIn.anPart3(1 : iLeavePlacement - 1); 
+    solnOut
     
-    % 
+    % Insert the index it will be leaving from
+    solnOut.anPart3(iLeavePlacement) = iStopLeave;
+    solnOut
+    
+    % Insert the remaining values iStopLeave to the end of the array
+    solnOut.anPart3 = [ solnOut.anPart3 solnIn.anPart3(iLeavePlacement : end) ];
+    solnOut
+    
+    % ----
+    % Shift columns in Part 2 up by 1
+    % Shift the columns at & abova where it goes to the right by 1
+    solnOut.anPart2 = solnIn.anPart2(1 : iLeavePlacement - 1);
+    
+    % Insert the customer jCust
+    solnOut.anPart2(iLeavePlacement) = jCust; 
+    
+    % Insert the remaining values iStopLeave to the end of the array
+    solnOut.anPart2 = [ solnOut.anPart2 solnIn.anPart2(iLeavePlacement : end) ]; 
     
     
-            
+    % ----
+    % Shift the columns in Part 4 up by 1
+    % Shift the columns at & above where it goes to the right by 1
+    solnOut.anPart4 = solnIn.anPart4(1 : iLeavePlacement - 1);
+
+    % Insert the customer return index
+    solnOut.anPart4( iLeavePlacement ) = iStopReturn; 
+    
+    % Insert the remaining values iStopLeave to the end of the array
+    solnOut.anPart4 = [ solnOut.anPart4 solnIn.anPart4(iLeavePlacement : end) ]; 
+    
+    
+    solnOut
             
     
         
