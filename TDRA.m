@@ -591,6 +591,8 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
             
             % Insert the customer into every drone route
             nDrone = 1; 
+
+            % Testing the git clone stuff
             
             
             
