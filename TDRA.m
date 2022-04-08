@@ -36,8 +36,8 @@ function[] = TDRA( )
 %     C0.y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
-%     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
-%     C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
+    C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
+    C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
     
 %     C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
 %     C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
@@ -47,10 +47,10 @@ function[] = TDRA( )
 %     C0.x = [ 0  8  6 -7  1  0 ];
 %     C0.y = [ 0 -2 -3 -3  2  0 ];
 
-%              0  1  2  3  4  5  6  0  Customer ID
-%              1  2  3  4  5  6  7  8  Indices
-    C0.x = [ 0 -2 -3  2  2  7 -4  0 ]; 
-    C0.y = [ 0  4  1  4  3  1  3  0 ]; 
+%            0  1  2  3  4  5  6  0  Customer ID
+%            1  2  3  4  5  6  7  8  Indices
+%     C0.x = [ 0 -2 -3  2  2  7 -4  0 ]; 
+%     C0.y = [ 0  4  1  4  3  1  3  0 ]; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%Testing ellipse fitting %%%%%%%%%%%%%%%%%%%%%%%%
 % Slanted ellipse
@@ -140,7 +140,7 @@ function[] = TDRA( )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % Plot the truck and drone route
-    plot_route( C0, s);
+    plot_route( C0, s, 1);
     
     
     % Initialize best solution, the rsult of the best solution, the 
@@ -150,16 +150,21 @@ function[] = TDRA( )
     
     
     % Elliptical stuff
-    
     solnOut = ellipticalCustomerAssignment( s_best, C0, u);
-    plot_route( C0, solnOut)
     
+    % ALAN FIX THIS
+    % The reason our plot isn't working too well is because for whatever
+    % reason, the solnOut is choosing to return to a customer location that
+    % is further away than the one it should be returning to . 
+    hold on; 
+    plot_route( C0, solnOut, 4)
+    hold off; 
     
     
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function[ ] = plot_route( C0, s) 
+function[ ] = plot_route( C0, s, fig_num ) 
 % plot_route will take in the customer locations & the initial solution
 % produced via the Simulated annealing method. It will then plot the route 
 % the truck will take. 
@@ -167,6 +172,7 @@ function[ ] = plot_route( C0, s)
 %   C0      The locations of all the customers
 %   s       The route we are plotting 
 %   u       The number of drones 
+%  fig_num  The number of the figure
 % Output
 %   
 
@@ -226,7 +232,7 @@ function[ ] = plot_route( C0, s)
     aDimensions = size(aanDrones);
     
     % Plot this stuff
-    figure(2)
+    figure(fig_num)
     hold on; 
     plot(0,0,'b*', 'MarkerSize', 12)
     plot(a, b, 'k-')
@@ -459,6 +465,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
     plot(C0.x, C0.y, 'bo')
     plot(afXGoodData, afYDataPositive, 'r-')
     plot(afXGoodData, afYDataNegative, 'r-')
+    
 
     
     % Given a customer point (xi, yi), find the point (x, y) on an ellipse
@@ -608,7 +615,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
             % Check all potential positions in drone route
             for iDrone = 1 : k
                 for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
-                    for iStopReturn = iStopLeave : length(solnRemovedCustomer.anPart1)
+                    for iStopReturn = iStopLeave + 1 : length(solnRemovedCustomer.anPart1)
                         % Insert the customer in the truck route
                         insertedDroneSoln = ... 
                             soln_add_drone_customer(solnRemovedCustomer,...
@@ -1010,8 +1017,14 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
             
             % Get the arrival time of the drones
             if iCustomerIndex == soln.anPart4(iReconveneIndex) % This means there is a drone flying to this point
+
+                % calculate distance from departure node to customer node
                 a = aafDistances( anCustomers(soln.anPart3(iReconveneIndex)) + 1, soln.anPart2(iReconveneIndex) + 1);
+                
+                % Calculate distance from customer node to arrival node
                 b = aafDistances( soln.anPart2(iReconveneIndex) + 1, anCustomers(soln.anPart4(iReconveneIndex)) + 1);
+%                 b = aafDistances( soln.anPart2(iReconveneIndex) + 1, anCustomers(soln.anPart4(iReconveneIndex) + 1) );
+
                 
                 aafDroneArrivalTime(iDrone, anCustomers(soln.anPart4(iReconveneIndex)) + 1) = (a + b)/alpha;
                 
