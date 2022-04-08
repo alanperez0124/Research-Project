@@ -150,8 +150,9 @@ function[] = TDRA( )
     
     
     % Elliptical stuff
-    u
+    
     solnOut = ellipticalCustomerAssignment( s_best, C0, u);
+    plot_route( C0, solnOut)
     
     
     
@@ -458,7 +459,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
     plot(C0.x, C0.y, 'bo')
     plot(afXGoodData, afYDataPositive, 'r-')
     plot(afXGoodData, afYDataNegative, 'r-')
-%     hold off; 
+
     
     % Given a customer point (xi, yi), find the point (x, y) on an ellipse
     % that minimizes the distance between (xi, yi) and (x, y)
@@ -525,15 +526,14 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
    end
     
    hold off;
-   afDistanceFromEllipse;
    
    
    % Sort the customer in descending order from distance to the ellipse
-   afDistanceFromEllipse
+   afDistanceFromEllipse;
    [ afSortedDistances, anSortedTruckCustomers ] = sort( afDistanceFromEllipse, 2, "descend" );
 
-   afSortedDistances
-   anSortedTruckCustomers
+   afSortedDistances;
+   anSortedTruckCustomers;
    
    
    % Get the distance matrix (the distances between all the points)
@@ -542,19 +542,32 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
    
     % Now we start looping until no feasible position is available for
     % customers in the list for re-insertion in UAV routes
-    feasible = 1;  %
+%     feasible = 1;  %
     temp_counter = 0;     % this temporary counter will eventually be removed, 
                           % it is taking place of the feasibility thing
            
+    bDone = 0;
 
-    while temp_counter < 40
+
+    
+% if for one iteration of the repeat loop, doesn't improve. 
+
+
+    while ~bDone 
+        % Initialize the "previous" best waiting time
+        fTotalWaitingTimePrev = fSolnOut; 
+
+
         for i = 1 : length(anSortedTruckCustomers)
+            % Initialize feasibility for truck insertion
+            bFeasible = 1; 
             
             % Store the index of customer i in anSortedTruckCustomers
             jCust = anSortedTruckCustomers(i);  % customer index at index i in anSortedTruckCustomers
             
             % Select customer c_j in the list & remove it from truck route
             solnRemovedCustomer = soln_remove_truck_customer(solnIn, jCust);
+
 
 %             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
 %             solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
@@ -565,55 +578,71 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 %             jCust = 8  % This is the customer we will be removing
 %             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
             
+            % Check all potential positions in truck route
             for iTruckStop = 2 : length(solnIn.anPart1)
                 % Insert the customer in the truck route
-                insertedSoln = soln_insert_truck_customer(solnRemovedCustomer, jCust, iTruckStop);
+                insertedTruckSoln = ...
+                    soln_insert_truck_customer(solnRemovedCustomer, jCust, iTruckStop);
                 
                 
                 % Check feasibility 
-                
+                % Totally checking feasibility, yep looks super great
+                %%%%% REMOVE AFTER TESTING %%%%%
+                bFeasible = 1; 
+                %%%%% REMOVE AFTER TESTING %%%%%              
                 
                 % Calculate the total waiting time
-                fWaitingTime = f( aafDistances, insertedSoln, k ); 
+                fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, k ); 
+
+                % Compare this s to our original s_out
+                if bFeasible && (fTruckInsertionWaitingTime < fSolnOut)
+                    solnOut = insertedTruckSoln; 
+                    fSolnOut = fTruckInsertionWaitingTime; 
+                end
             end
             
+
+            % Intialize feasibility for inserting customer into drone
+            bFeasible = 1; 
             
+            % Check all potential positions in drone route
             for iDrone = 1 : k
                 for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
                     for iStopReturn = iStopLeave : length(solnRemovedCustomer.anPart1)
                         % Insert the customer in the truck route
                         insertedDroneSoln = ... 
-                            soln_add_drone_customer(solnRemovedCustomer, jCust, iDrone, iStopLeave, iStopReturn)
+                            soln_add_drone_customer(solnRemovedCustomer,...
+                            jCust, iDrone, iStopLeave, iStopReturn);
+
+                        % Check feasibility
+                        % Wow still super feasible 
+
+                        % Calculate the total waiting time
+                        fDroneInsertionWaitingTime = f( aafDistances, insertedDroneSoln, k); 
+
+                        % Compare this to the solnOut
+                        if bFeasible && (fDroneInsertionWaitingTime < fSolnOut)
+                            solnOut = insertedDroneSoln; 
+                            fSolnOut = fDroneInsertionWaitingTime; 
+                        end
+
+                        
                     end
                 end
             end
-            
-            
-            % Insert the customer into every drone route
-            nDrone = 1; 
 
-            % Testing the git clone stuff
-            
-            
-            
-            % Try inserting jCustomer into all possible spots in the truck routes
-%             for i = 1 : soln
-%             
-%             for Drone
-%                 for leavingStop % = 1 : LENGTH(PART1)
-%                     for returning stop   % Where the returning stop must come AFTER THE LEAVING STOP; = L.S. + 1 : length(part1)
-%                     end
-%                 end
-%             end
-%             
+        end 
 
+
+        % Remove the customer from the list
+        anSortedTruckCustomers(1) = []; 
+
+
+        % right here
+        if fTotalWaitingTimePrev <= fSolnOut 
+            bDone = 1; 
         end
-%         
-        temp_counter = temp_counter + 1;
-        
-        
     end
-
 
 end
 
@@ -697,7 +726,7 @@ function[ solnOut ] = soln_remove_truck_customer(solnIn, jCust)
     
     % Remove jCust and shift everyone down
     solnIn.anPart1(jCustIndex) = [];
-    solnIn.anPart1
+    solnIn.anPart1;
 
     % Shift things in part 3 and part 4 that are after the removal slot
     % down by 1
@@ -860,10 +889,7 @@ function[ solnOut ] = soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave,
     solnOut.anPart4 = [ solnOut.anPart4 solnIn.anPart4(iLeavePlacement : end) ]; 
     
     
-    solnOut
-            
-    
-        
+    solnOut;      
 end
 
 function[ sPrime ] = neighbor( soln )

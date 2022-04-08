@@ -1,11 +1,16 @@
-1. In our paper, the 2-opt method is said to exchange customers from part 1 
-    and part 2. So how are we meant to implement it in our simulated 
-    annealing algorithm??
+1. When inserting our customer into the truck position and we get our s_prime, 
+    do we get another s_prime when we insert our customer into the drone 
+    route and compare those as well?? Or what do we dooooo? Right now I have 
+    it as two separate solutions. 
 
-    So we can create a condition statement that checks to see if our Part 2
-    has anything in it besides -1. Then based on this, 
 
-2.  
+2.  When it says remove the assigned customers from the list, does it mean 
+    remove jCust from the sorted list?
+
+
+3. How are we meant to terminate the while loop of he ECA heuristic?
+
+4. 
 
 
 NOTES
