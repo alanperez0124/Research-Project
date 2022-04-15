@@ -36,8 +36,8 @@ function[] = TDRA( )
 %     C0.y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
-%     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
-%     C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
+    C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
+    C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
     
 %     C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
 %     C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
@@ -53,8 +53,8 @@ function[] = TDRA( )
 %     C0.y = [ 0  4  1  4  3  1  3  0 ]; 
 
 % 
-    C0.x = [0, 1, 2, 3, 3, 2, 1, 0 ]
-    C0.y = [0, 1, 1, 0.1, -1, -1, -1, 0]
+%     C0.x = [0, 1, 2, 3, 3, 2, 1, 0 ]
+%     C0.y = [0, 1, 1, 0.1, -1, -1, -1, 0]
 
 %%%%%%%%%%%%%%%%%%%%%%%%Testing ellipse fitting %%%%%%%%%%%%%%%%%%%%%%%%
 % Slanted ellipse
@@ -164,7 +164,7 @@ function[] = TDRA( )
     plot_route( C0, solnOut, 4)
     hold off; 
     
-    check_feasibility(solnOut)
+    f(aafDistances, solnOut, u)
     
 end
 
@@ -594,9 +594,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                 
                 % Check feasibility 
                 % Totally checking feasibility, yep looks super great
-                %%%%% REMOVE AFTER TESTING %%%%%
-                bFeasible = 1; 
-                %%%%% REMOVE AFTER TESTING %%%%%              
+                bFeasible = check_feasibility(insertedTruckSoln);           
                 
                 % Calculate the total waiting time
                 fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, k ); 
@@ -622,7 +620,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                             jCust, iDrone, iStopLeave, iStopReturn);
 
                         % Check feasibility
-                        % Wow still super feasible 
+                        bFeasible = check_feasibility(insertedDroneSoln);
 
                         % Let's check what it looks like
 %                         hold on; 
@@ -1117,11 +1115,11 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
     % Make sure that drone isn't traveling back and forth
     iCustIndex = 1; 
     while iCustIndex <= length(solnIn.anPart3) && bFeasible
-        if (solnIn.anPart3(iCustIndex) == solnIn.anPart4(iCustIndex) && solnIn.anPart3 ~= -1)
+        if (solnIn.anPart3(iCustIndex) == solnIn.anPart4(iCustIndex) && solnIn.anPart3(iCustIndex) ~= -1)
             bFeasible = 0; 
         end
 
-        if (solnIn.anPart3(iCustIndex) == 1 && solnIn.anPart4(iCustIndex) == length(solnIn.anPart1))
+        if (solnIn.anPart3(iCustIndex) == 1 && (solnIn.anPart4(iCustIndex) == length(solnIn.anPart1)))
             bFeasible = 0; 
         end
         iCustIndex = iCustIndex + 1; 
