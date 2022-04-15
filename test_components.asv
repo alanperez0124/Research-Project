@@ -1,17 +1,12 @@
 function[ ] = test_components()
     
 
-    x = 0;
-    if x
-        'alan'
+    a.a = [1, 2, 3]; 
+    a.b = [4, 5, 6];
+    
+    for i = 1 : length(a.b)
+        a.b(i)
     end
-
-%     a.a = [1, 2, 3]; 
-%     a.b = [4, 5, 6];
-%     
-%     for i = 1 : length(a.b)
-%         a.b(i)
-%     end
     
 
     

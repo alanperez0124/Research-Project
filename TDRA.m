@@ -36,8 +36,8 @@ function[] = TDRA( )
 %     C0.y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
-    C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
-    C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
+%     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
+%     C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
     
 %     C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
 %     C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
@@ -51,6 +51,10 @@ function[] = TDRA( )
 %            1  2  3  4  5  6  7  8  Indices
 %     C0.x = [ 0 -2 -3  2  2  7 -4  0 ]; 
 %     C0.y = [ 0  4  1  4  3  1  3  0 ]; 
+
+% 
+    C0.x = [0, 1, 2, 3, 3, 2, 1, 0 ]
+    C0.y = [0, 1, 1, 0.1, -1, -1, -1, 0]
 
 %%%%%%%%%%%%%%%%%%%%%%%%Testing ellipse fitting %%%%%%%%%%%%%%%%%%%%%%%%
 % Slanted ellipse
@@ -160,6 +164,7 @@ function[] = TDRA( )
     plot_route( C0, solnOut, 4)
     hold off; 
     
+    check_feasibility(solnOut)
     
 end
 
@@ -564,17 +569,12 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
         % Initialize the "previous" best waiting time
         fTotalWaitingTimePrev = fSolnOut; 
 
-
-        for i = 1 : length(anSortedTruckCustomers)
-            % Initialize feasibility for truck insertion
-            bFeasible = 1; 
-            
+        for i = 1 : length(anSortedTruckCustomers)           
             % Store the index of customer i in anSortedTruckCustomers
             jCust = anSortedTruckCustomers(i);  % customer index at index i in anSortedTruckCustomers
             
             % Select customer c_j in the list & remove it from truck route
             solnRemovedCustomer = soln_remove_truck_customer(solnIn, jCust);
-
 
 %             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
 %             solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
@@ -586,7 +586,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 %             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
             
             % Check all potential positions in truck route
-            for iTruckStop = 2 : length(solnIn.anPart1)
+            for iTruckStop = 2 : length(solnIn.anPart1) - 1
                 % Insert the customer in the truck route
                 insertedTruckSoln = ...
                     soln_insert_truck_customer(solnRemovedCustomer, jCust, iTruckStop);
@@ -607,11 +607,11 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                     fSolnOut = fTruckInsertionWaitingTime; 
                 end
             end
-            
 
             % Intialize feasibility for inserting customer into drone
             bFeasible = 1; 
             
+            indexindexindex = 1;
             % Check all potential positions in drone route
             for iDrone = 1 : k
                 for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
@@ -624,7 +624,14 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                         % Check feasibility
                         % Wow still super feasible 
 
+                        % Let's check what it looks like
+%                         hold on; 
+%                         plot_route( C0, insertedDroneSoln, indexindexindex)
+%                         hold off;
+                        
                         % Calculate the total waiting time
+                        % note: when calculating wait times, we are using
+                        % the CURRENT soln.anPart1 
                         fDroneInsertionWaitingTime = f( aafDistances, insertedDroneSoln, k); 
 
                         % Compare this to the solnOut
@@ -633,12 +640,11 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                             fSolnOut = fDroneInsertionWaitingTime; 
                         end
 
-                        
+                        indexindexindex = indexindexindex + 1; 
                     end
                 end
             end
-
-        end 
+        end % here here here
 
 
         % Remove the customer from the list
@@ -653,7 +659,8 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 
 end
 
-function[ ae_vals, k, aUnknowns ] = newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
+function[ ae_vals, k, aUnknowns ] = ...
+    newtons_method( nMax, afGuess, fThreshold, h, h_jacobian, a, C0, iCustomer )
 % Newton's method will approximate the roots of our function h. For this
 % particular problem, h is the gradient of our distance formula. 
 % Input
@@ -799,7 +806,8 @@ function[ solnOut ] = soln_insert_truck_customer(solnIn, jCust, iStop)
     end             
 end
 
-function[ solnOut ] = soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave, iStopReturn)
+function[ solnOut ] = ...
+    soln_add_drone_customer(solnIn, jCust, iDrone, iStopLeave, iStopReturn)
 % soln_add_drone_customer will take in the current solution data structure,
 % the customer we will be including, the drone that will be delivering to
 % it as well as where the drone will be departing from and arriving to. 
@@ -993,9 +1001,12 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
         iDrone = 1; % Initialize drone counter
         
         % Calculate the arrival time of the truck to this node        
+%         aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1) = ...
+%             aafDistances( anCustomers(iCustomerIndex - 1) + 1, anCustomers(iCustomerIndex) + 1 ) ...
+%           + aafTruckArrivalTime( anCustomers(iCustomerIndex - 1) + 1);
         aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1) = ...
             aafDistances( anCustomers(iCustomerIndex - 1) + 1, anCustomers(iCustomerIndex) + 1 ) ...
-          + aafTruckArrivalTime( anCustomers(iCustomerIndex - 1) + 1);
+          + aafTruckDepartureTime( anCustomers(iCustomerIndex - 1) + 1);
         
 %         "Put this arrival times in aafTruckDepartureTimes and vector and 
 %          then update them if they have a drone approaching that same
@@ -1003,6 +1014,7 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
 %          iCustomerIndex, then they already have something in their truck
 %          arrival time vector. That is, we are assuming that no customer
 %          has a drone delivering to them. 
+%          NOTE: ASSUME INSTANTANEOUS ARRIVAL AND DEPARTURE
         aafTruckDepartureTime(anCustomers(iCustomerIndex) + 1) = ...
             aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1);
         
@@ -1031,9 +1043,15 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
                 %%%% WORKS TILL HERE %%%%
                 
                 % if Truck is there before the drone, it must wait
-                if aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1) < max (aafDroneArrivalTime( :, anCustomers(iCustomerIndex) + 1 ) )
+                if aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1) < ... 
+                        max (aafDroneArrivalTime( :, anCustomers(iCustomerIndex) + 1 ) ) ...
+                        + aafTruckDepartureTime(anCustomers(iPrevious) + 1) % added this addition bit
+
                     aafTruckDepartureTime(anCustomers(iCustomerIndex) + 1) = ...
-                        max (aafDroneArrivalTime( :, anCustomers(iCustomerIndex) + 1) );
+                        max (aafDroneArrivalTime( :, anCustomers(iCustomerIndex) + 1) ) + ...
+                        aafTruckDepartureTime(anCustomers(iPrevious) + 1);
+                    % do we need to add everything up to this point to the
+                    % distance traveled by the drone??
                 elseif aafTruckArrivalTime(anCustomers(iCustomerIndex) + 1) > max( aafDroneArrivalTime( :, iCustomerIndex) )
                     % If the drone is there before the truck
                     aafTruckDepartureTime(anCustomers(iCustomerIndex) + 1) = aafTruckArrivalTime( anCustomers(iCustomerIndex) + 1);
@@ -1047,5 +1065,77 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
     
     
     % Get the total waiting time 
-    fTotalWaitTime = aafTruckDepartureTime( soln.anPart1(end - 1) + 1 );       
+    fTotalWaitTime = aafTruckDepartureTime( soln.anPart1(end - 1) + 1 ); 
+
+
+    %% NOTES
+    % WE MIGHT HAVE TO CREATE IF STATEMENT FOR WHAT TO RETURN. For example,
+    % if the last customer is visited by a drone and arrives there before
+    % the truck, we are not interested in waiting for the truck to get
+    % there (since our drone would have already delivered to the customer).
+    %   In this case we don't want to return the aafTruckDepartureTime. 
+
+    % Potential Fix: in the case that we visit a customer and the drone
+    % gets there faster, IF there is a customer to visit afterwards, THEN
+    % we choose the higher time. ELSE (last customer), we take the minimum.
+    % Look at the picture titled "ECA_fig1"
+
+end
+
+function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
+% This function will check the feasibility of the solution that is passed 
+% in. It will check that several requirements are satisfied: 
+% FOR DRONES: 
+% - Travel distance for each drone <= max
+% - Leaving stop of drone (part 3) < returning stop of drone (part 4)**
+% - No overlapping drone trips (we don't give a drone in the air a delivery)
+%       - for each slot in part 4, make sure entry in slot+1 of part 3 is 
+%         >= the part 4 value
+% GENERAL: 
+% - Make sure each customer is delivered to 
+% - Battery pack availability/battery life for consecutive trips
+% - No out and back trips (covered by **) (part3 == part4)
+% TRUCK: 
+% - truck must start and end at the depot
+% Input
+%  solnIn         Input solution
+%  C0             The customer locations
+%  aafDistances   The distances between customer nodes
+% Output
+%   bFeasible  Boolean value that is true if the solution is feasible; 
+%               false otherwise
+
+    % Local variables
+    %  maxDistance     The max distance permitted 
+
+    % Initialize maxDistance variable
+    maxDistance = 10; 
+    
+    % Initialize bFeasible to true
+    bFeasible = 1; 
+
+    % Make sure that drone isn't traveling back and forth
+    iCustIndex = 1; 
+    while iCustIndex <= length(solnIn.anPart3) && bFeasible
+        if (solnIn.anPart3(iCustIndex) == solnIn.anPart4(iCustIndex) && solnIn.anPart3 ~= -1)
+            bFeasible = 0; 
+        end
+
+        if (solnIn.anPart3(iCustIndex) == 1 && solnIn.anPart4(iCustIndex) == length(solnIn.anPart1))
+            bFeasible = 0; 
+        end
+        iCustIndex = iCustIndex + 1; 
+    end
+
+    % Make sure that the travel distance for each drone is not too far
+%     for i = 1 : length(solnIn.anPart3)
+%         afDistance = 0
+%         if (solnIn.anPart3(i) ~= -1)
+%             
+%         end
+%     end
+
+
+
+
 end
