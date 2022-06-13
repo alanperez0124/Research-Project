@@ -28,7 +28,12 @@ function[] = TDRA( )
     %                          each UAV for every flight
     %                      ansoln.Part4 represents the reconvene locations of
     %                          each UAV for every flight
-    %
+    %       Rmax         Maximum number of iterations that our heuristic
+    %                      will run
+    %       WeightInfo   The weight of each heuristic which serves as an
+    %                      indicator of the performance of the heuristic
+
+    
     
     
     % Generate customer locations
@@ -44,8 +49,8 @@ function[] = TDRA( )
     
 % %          0  1  2  3  4  0   Customer ID
 % %          1  2  3  4  5  6   Indices
-%     C0.x = [ 0  8  6 -7  1  0 ];
-%     C0.y = [ 0 -2 -3 -3  2  0 ];
+    C0.x = [ 0  8  6 -7  1  0 ];
+    C0.y = [ 0 -2 -3 -3  2  0 ];
 
 %            0  1  2  3  4  5  6  0  Customer ID
 %            1  2  3  4  5  6  7  8  Indices
@@ -53,8 +58,8 @@ function[] = TDRA( )
 %     C0.y = [ 0  4  1  4  3  1  3  0 ]; 
 
 % 
-    C0.x = [0, 1, 2, 3, 3, 2, 1, 0 ]
-    C0.y = [0, 1, 1, 0.1, -1, -1, -1, 0]
+%     C0.x = [0, 1, 2, 3, 3, 2, 1, 0 ]
+%     C0.y = [0, 1, 1, 0.1, -1, -1, -1, 0]
 
 %%%%%%%%%%%%%%%%%%%%%%%%Testing ellipse fitting %%%%%%%%%%%%%%%%%%%%%%%%
 % Slanted ellipse
@@ -142,7 +147,8 @@ function[] = TDRA( )
 %     s.anPart2 = [ 1 -1 3 ];   % visits customer 1
 %     s.anPart4 = [ 3 -1 4 ];   % returns to index 2 of s.anPart1 (which is customer 3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     % Plot the truck and drone route
     plot_route( C0, s, 1);
     
@@ -164,7 +170,16 @@ function[] = TDRA( )
     plot_route( C0, solnOut, 4)
     hold off; 
     
-    bFeasible 
+    f(aafDistances, solnOut, u)
+
+    % This is line 4 of Algorithm 1: Outline of the TDRA
+    WeightInfo = weight_init();
+
+    Rmax = 10; 
+    for iIter = 1 : Rmax
+        nHeuristic = select_heuristic();
+    end
+
     
 end
 
@@ -594,9 +609,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                 
                 % Check feasibility 
                 % Totally checking feasibility, yep looks super great
-                %%%%% REMOVE AFTER TESTING %%%%%
-                bFeasible = 1; 
-                %%%%% REMOVE AFTER TESTING %%%%%              
+                bFeasible = check_feasibility(insertedTruckSoln);           
                 
                 % Calculate the total waiting time
                 fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, k ); 
@@ -622,7 +635,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                             jCust, iDrone, iStopLeave, iStopReturn);
 
                         % Check feasibility
-                        % Wow still super feasible 
+                        bFeasible = check_feasibility(insertedDroneSoln);
 
                         % Let's check what it looks like
 %                         hold on; 
@@ -1115,17 +1128,59 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
     bFeasible = 1; 
 
     % Make sure that drone isn't traveling back and forth
-    solnIn
+    iCustIndex = 1; 
+    while iCustIndex <= length(solnIn.anPart3) && bFeasible
+        if (solnIn.anPart3(iCustIndex) == solnIn.anPart4(iCustIndex) && solnIn.anPart3(iCustIndex) ~= -1)
+            bFeasible = 0; 
+        end
+
+        if (solnIn.anPart3(iCustIndex) == 1 && (solnIn.anPart4(iCustIndex) == length(solnIn.anPart1)))
+            bFeasible = 0; 
+        end
+        iCustIndex = iCustIndex + 1; 
+    end
 
     % Make sure that the travel distance for each drone is not too far
-%     for i = 1 : length(solnIn.anPart3)
-%         afDistance = 0
-%         if (solnIn.anPart3(i) ~= -1)
-%             
-%         end
-%     end
+    for i = 1 : length(solnIn.anPart3)
+        afDistance = 0;
+        if (solnIn.anPart3(i) ~= -1)
+            
+        end
+    end
+end
+
+% Heuristics
+function[ WeightInfo ] = weight_init()
+% The weight_init() function will initialize the weights of all the
+% heuristics available to us and return a structure that keeps track of
+% scores, times, weights, gammas, and segments. 
+
+% Input
+% 
+
+% Output
+%   WeightInfo          The variable WeightInfo is a data structure with
+%                        the following attributes: 
+%
+%    WeightInfo.afScores  : pi vector which represents the heuristic scores
+%    WeightInfo.anTimes   : theta vector which represents the number of
+%                            times each heuristic was used 
+%    WeightInfo.aafWeights: w_q,l array which represents the weight of
+%                            heuristic q used in segment l 
+%    WeightInfo.fGamma    : a coefficient between 0 and 1 used to balance
+%                            between the value of earlier weights and the
+%                            new normalized scores
+%         .nSegmentCounter: current l 
+
+    % Variables
+    % 
+    
+    % Initialize WeightInfo
+    WeightInfo.afScores = zeros(1, 2); % 2 heuristics 
+end
 
 
-
+function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
+% This function will implement the 2-opt heuristic 
 
 end

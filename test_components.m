@@ -1,10 +1,9 @@
 function[ ] = test_components()
     
 
-    x = 0;
-    if x
-        'alan'
-    end
+    a = zeros(1, 4)
+
+    
 
 %     a.a = [1, 2, 3]; 
 %     a.b = [4, 5, 6];
@@ -41,8 +40,8 @@ function[ ] = test_components()
 % 
 %     plot( [ data1(1, :); data2(1, :)], [ data1(2, :); data2(2, :) ], 'b-' )
 %     hold off; 
-%     
-%     
-%     
-%     
+    
+    
+    
+    
 end

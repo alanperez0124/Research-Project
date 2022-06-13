@@ -28,7 +28,12 @@ function[] = TDRA( )
     %                          each UAV for every flight
     %                      ansoln.Part4 represents the reconvene locations of
     %                          each UAV for every flight
-    %
+    %       Rmax         Maximum number of iterations that our heuristic
+    %                      will run
+    %       WeightInfo   The weight of each heuristic which serves as an
+    %                      indicator of the performance of the heuristic
+
+    
     
     
     % Generate customer locations
@@ -36,16 +41,16 @@ function[] = TDRA( )
 %     C0.y = (50 - -50)*rand(1, 4) + -50;
 %     C0.x = [ 0 -10 0 0 ]; % we treat the first slot as the depot;
 %     C0.y = [ 0 0 -10 -5 ];  % we treat the first slot as the depot;
-    C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
-    C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
+%     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
+%     C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
     
 %     C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
 %     C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
     
 % %          0  1  2  3  4  0   Customer ID
 % %          1  2  3  4  5  6   Indices
-%     C0.x = [ 0  8  6 -7  1  0 ];
-%     C0.y = [ 0 -2 -3 -3  2  0 ];
+    C0.x = [ 0  8  6 -7  1  0 ];
+    C0.y = [ 0 -2 -3 -3  2  0 ];
 
 %            0  1  2  3  4  5  6  0  Customer ID
 %            1  2  3  4  5  6  7  8  Indices
@@ -142,7 +147,8 @@ function[] = TDRA( )
 %     s.anPart2 = [ 1 -1 3 ];   % visits customer 1
 %     s.anPart4 = [ 3 -1 4 ];   % returns to index 2 of s.anPart1 (which is customer 3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     % Plot the truck and drone route
     plot_route( C0, s, 1);
     
@@ -165,6 +171,15 @@ function[] = TDRA( )
     hold off; 
     
     f(aafDistances, solnOut, u)
+
+    % This is line 4 of Algorithm 1: Outline of the TDRA
+    WeightInfo = weight_init();
+
+    Rmax = 10; 
+    for iIter = 1 : Rmax
+        nHeuristic = select_heuristic();
+    end
+
     
 end
 
@@ -1126,14 +1141,55 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
     end
 
     % Make sure that the travel distance for each drone is not too far
-%     for i = 1 : length(solnIn.anPart3)
-%         afDistance = 0
-%         if (solnIn.anPart3(i) ~= -1)
-%             
-%         end
-%     end
+    for i = 1 : length(solnIn.anPart3)
+        afDistance = 0;
+        if (solnIn.anPart3(i) ~= -1)
+            
+        end
+    end
+end
+
+% Heuristics
+function[ WeightInfo ] = weight_init()
+% The weight_init() function will initialize the weights of all the
+% heuristics available to us and return a structure that keeps track of
+% scores, times, weights, gammas, and segments. 
+
+% Input
+% 
+
+% Output
+%   WeightInfo          The variable WeightInfo is a data structure with
+%                        the following attributes: 
+%
+%    WeightInfo.afScores  : pi vector which represents the heuristic scores
+%    WeightInfo.anTimes   : theta vector which represents the number of
+%                            times each heuristic was used 
+%    WeightInfo.aafWeights: w_q,l array which represents the weight of
+%                            heuristic q used in segment l 
+%    WeightInfo.fGamma    : a coefficient between 0 and 1 used to balance
+%                            between the value of earlier weights and the
+%                            new normalized scores
+%         .nSegmentCounter: current l 
+
+    % Variables
+    %   numHeuristics      The current number of heuristics implemented in
+    %                       the code; 
+
+    % Number of heuristics
+    numHeuristics = 2; 
+    
+    % Initialize WeightInfo
+    WeightInfo.afScores = zeros(1, numHeuristics); % 2 heuristics 
+    WeightInfo.anTimes = zeros(1, numHeuristics); 
+    WeightInfo.aafWeights(1, :) = (1/numHeuristics) * ones(1, numHeuristics); 
+    WeightInfo.fGamma = 0.2; 
+    WeightInfo.nSegmentCounter = 1; 
+    
+end
 
 
-
+function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
+% This function will implement the 2-opt heuristic 
 
 end
