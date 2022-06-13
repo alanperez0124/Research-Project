@@ -1,12 +1,7 @@
 function[ ] = test_components()
     
 
-    a = [1, 3, 4; 
-         2, 6, 7];
-
-    b = size(a)
-    
-    b(1)
+    randi([1, 3])
     
 
 %     a.a = [1, 2, 3]; 

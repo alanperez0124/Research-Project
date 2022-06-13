@@ -1226,6 +1226,31 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
 end
 
 function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
-% This function will implement the 2-opt heuristic 
+% This function will implement the 2-opt heuristic which will swap two
+% customers within the vector of Parts 1 and 2. The customers are selected
+% randomly for the 2-Opt method. Chainging the values in Parts 1 and 2
+% while keeping the values in Parts 3 and 4 unchanged may lead to an
+% infeasible solution due to the flight range constraint. In the case of
+% infeasibility, we use the DRONE PLANNER HEURISTIC. 
 
+% Input
+%  solnCurr   The current solution 
+
+% Output
+%  solnBest   The best solution our algorithm was able to determine
+
+    % Variables
+    %  nCustA      Randomly selected customer integer
+    %  nCustB      Randomly selected customer integer
+    
+    % Get customers to be swapped
+    nCustA = randi([1, length(soln.anPart1)-2]); % Ignore the 2 zeros
+    nCustB = randi([1, length(soln.anPart1)-2]);
+    
+    while nCustB == nCustA
+        nCustB = randi([1, length(soln.anPart1)-1]);
+    end
+
+    % Find which slot in either part1 or part2 each of A & B are at
+    
 end
