@@ -1166,7 +1166,7 @@ function[ WeightInfo ] = weight_init()
 %    WeightInfo.anTimes   : theta vector which represents the number of
 %                            times each heuristic was used 
 %    WeightInfo.aafWeights: w_q,l array which represents the weight of
-%                            heuristic q used in segment l 
+%                            heuristic q (col) used in segment l (row)
 %    WeightInfo.fGamma    : a coefficient between 0 and 1 used to balance
 %                            between the value of earlier weights and the
 %                            new normalized scores
@@ -1188,6 +1188,42 @@ function[ WeightInfo ] = weight_init()
     
 end
 
+function[ nHeuristic ] = select_heuristic( WeightInfo ) 
+% The select_heuristic function will take in a WeightInfo variable with a
+% structure with the attributes: scores, times, weights, gamma, and segment
+% counter. It will calculate the probabilities of the heuristic being
+% selected using the WeightInfo.aafWeights attribute. 
+
+% Input
+%  WeightInfo       Structure with attributes afScores, anTimes,
+%                    aafWeights, fGamma, and nSegmentCounter
+
+% Output
+%  nHeuristic       Returns the index associated with the chosen heuristic.
+%                    For example, 1 = 2-Opt Heuristic, 2 = 3-opt Heuristic,
+%                    3 = Greedy Assignment Heuristic, etc
+
+    % Variables
+    %  afProbabilities       The probabilities of each heuristic being selected
+    %  fHeuristicWeightSum   The sum of the weights from
+    %                           WeightInfo.nSegmentCounter
+    %  anSize                The dimensions of the aafWeights attribute
+
+    % Calculate the size
+    anSize = size(WeightInfo.aafWeights);
+
+    % Calculate probabilities
+    fHeuristicWeightSum = 0; 
+    for i = 1 : anSize(2)
+        fHeuristicWeightSum = fHeuristicWeightSum + WeightInfo.aafWeights(i); 
+    end
+    
+
+    afProbabilities(:, WeightInfo.nSegmentCounter) = ...
+        WeightInfo.aafWeights(:, WeightInfo.nSegmentCounter) / fHeuristicWeightSum; 
+
+
+end
 
 function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
 % This function will implement the 2-opt heuristic 

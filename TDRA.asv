@@ -1173,12 +1173,47 @@ function[ WeightInfo ] = weight_init()
 %         .nSegmentCounter: current l 
 
     % Variables
-    % 
+    %   numHeuristics      The current number of heuristics implemented in
+    %                       the code; 
+
+    % Number of heuristics
+    numHeuristics = 2; 
     
     % Initialize WeightInfo
-    WeightInfo.afScores = zeros(1, 2); % 2 heuristics 
+    WeightInfo.afScores = zeros(1, numHeuristics); % 2 heuristics 
+    WeightInfo.anTimes = zeros(1, numHeuristics); 
+    WeightInfo.aafWeights(1, :) = (1/numHeuristics) * ones(1, numHeuristics); 
+    WeightInfo.fGamma = 0.2; 
+    WeightInfo.nSegmentCounter = 1; 
+    
 end
 
+function[ nHeuristic ] = select_heuristic( WeightInfo ) 
+% The select_heuristic function will take in a WeightInfo variable with a
+% structure with the attributes: scores, times, weights, gamma, and segment
+% counter. It will calculate the probabilities of the heuristic being
+% selected using the WeightInfo.aafWeights attribute. 
+
+% Input
+%  WeightInfo       Structure with attributes afScores, anTimes,
+%                    aafWeights, fGamma, and nSegmentCounter
+
+% Output
+%  nHeuristic       Returns the index associated with the chosen heuristic.
+%                    For example, 1 = 2-Opt Heuristic, 2 = 3-opt Heuristic,
+%                    3 = Greedy Assignment Heuristic, etc
+
+    % Variables
+    %  afProbabilities       The probabilities of each heuristic being selected
+    %  fHeuristicWeightSum   The sum of the weights of 
+
+    % Calculate probabilities
+    f= 
+
+    afProbabilities(:, WeightInfo.nSegmentCounter) = WeightInfo.aafWeights
+
+
+end
 
 function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
 % This function will implement the 2-opt heuristic 
