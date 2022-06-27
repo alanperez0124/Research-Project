@@ -173,11 +173,13 @@ function[] = TDRA( )
     f(aafDistances, solnOut, u)
 
     % This is line 4 of Algorithm 1: Outline of the TDRA
+    solnTest = apply_heuristic_2_opt(solnOut)
+
     WeightInfo = weight_init();
 
     Rmax = 10; 
     for iIter = 1 : Rmax
-        nHeuristic = select_heuristic();
+        nHeuristic = select_heuristic(WeightInfo);
     end
 
     
@@ -1204,7 +1206,7 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
 %                    3 = Greedy Assignment Heuristic, etc
 
     % Variables
-    %  afProbabilities       The probabilities of each heuristic being selected
+    %  afProbabilities       Vector of probabilities of each heuristic being selected
     %  fHeuristicWeightSum   The sum of the weights from
     %                           WeightInfo.nSegmentCounter
     %  anSize                The dimensions of the aafWeights attribute
@@ -1212,17 +1214,32 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
     % Calculate the size
     anSize = size(WeightInfo.aafWeights);
 
-    % Calculate probabilities
+    % Calculate vector of probabilities
     fHeuristicWeightSum = 0; 
     for i = 1 : anSize(2)
-        fHeuristicWeightSum = fHeuristicWeightSum + WeightInfo.aafWeights(i); 
+        fHeuristicWeightSum = fHeuristicWeightSum + ... 
+            WeightInfo.aafWeights(WeightInfo.nSegmentCounter, i); 
     end
     
+    afProbabilities = ...
+        WeightInfo.aafWeights(WeightInfo.nSegmentCounter, :) / fHeuristicWeightSum; 
 
-    afProbabilities(:, WeightInfo.nSegmentCounter) = ...
-        WeightInfo.aafWeights(:, WeightInfo.nSegmentCounter) / fHeuristicWeightSum; 
+    % Split interval 
+    afBoundaries = [0]; 
 
+    for i = 1 : length(afProbabilities)
+        afBoundaries(i+1) = afBoundaries(i) + afProbabilities(i);
+    end
+    
+    % Randomly select one
+    fRand = rand(); 
 
+    % Map the rand # to nHeuristic
+    for i = 1 : length(afBoundaries)
+        if fRand >= afBoundaries(i)
+            nHeuristic = i; 
+        end
+    end      
 end
 
 function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
@@ -1242,15 +1259,81 @@ function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
     % Variables
     %  nCustA      Randomly selected customer integer
     %  nCustB      Randomly selected customer integer
+
+    % Get the number of customers
+    nCustomers = length(solnCurr.anPart1) - 2; 
+
+    for i = 1 : length(solnCurr.anPart2) 
+        if solnCurr.anPart2(i) ~= -1
+            nCustomers = nCustomers + 1; 
+        end
+    end
     
     % Get customers to be swapped
-    nCustA = randi([1, length(soln.anPart1)-2]); % Ignore the 2 zeros
-    nCustB = randi([1, length(soln.anPart1)-2]);
+    nCustA = randi([1, nCustomers]); % Ignore the 2 zeros
+    nCustB = randi([1, nCustomers]);
     
     while nCustB == nCustA
-        nCustB = randi([1, length(soln.anPart1)-1]);
+        nCustB = randi([1, nCustomers]);
     end
 
     % Find which slot in either part1 or part2 each of A & B are at
+    % Part 1
+    nIndA1 = -1; 
+    nIndB2 = -1; 
+    for nIndex = 1 : length(solnCurr.anPart1)
+        if nCustA == solnCurr.anPart1(nIndex)
+            nIndA1 = nIndex;
+        end
+
+        if nCustB == solnCurr.anPart1(nIndex) 
+            nIndB1 = nIndex;
+        end
+    end
+
+    % Part 2
+    nIndA2 = -1; 
+    nIndB2 = -1; 
+    for nIndex = 1 : length(solnCurr.anPart2)
+        if nCustA == solnCurr.anPart2(nIndex)
+            nIndA2 = nIndex; 
+        end
+
+        if nCustB == solnCurr.anPart2(nIndex)
+            nIndB2 = nIndex; 
+        end
+    end
+
+    % Create solnNew and swap the two variables
+    solnNew = solnCurr; 
+
+    % customer a in part 1 and customer b in part 2
+    if nIndA1 ~= -1 && nIndB2 ~= -1
+        tempCust = solnNew.anPart1(nIndA1); 
+        solnNew.anPart1(nIndA1) = solnNew.anPart2(nIndB2); 
+        solnNew.anPart2(nIndB2) = tempCust; 
+
+    % customer a in part 2 and customer b in part 1
+    elseif nIndA2 ~= -1 && nIndB1 ~= -1
+        tempCust = solnNew.anPart2(nIndA2); 
+        solnNew.anPart2(nIndA2) = solnNew.anPart1(nIndB1); 
+        solnNew.anPart1(nIndB1) = tempCust; 
+
+    % customer a and b are in part 1
+    elseif nIndA1 ~= -1 && nIndB1 ~= -1
+        tempCust = solnNew.anPart1(nIndA1); 
+        solnNew.anPart1(nIndA1) = solnNew.anPart1(nIndB1); 
+        solnNew.anPart(nIndB1) = tempCust; 
+
+    % customer a and b are in part 2
+    elseif nIndA2 ~= -1 && nIndB2 ~= -1
+        tempCust = solnNew.anPart2(nIndA2);
+        solnNew.anPart2(nIndA2) = solnNew.anPart2(nIndB2); 
+        solnNew.anParts(nIndB2) = tempCust; 
+    end
+
     
+
+    
+
 end

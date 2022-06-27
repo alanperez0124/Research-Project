@@ -1,8 +1,6 @@
 function[ ] = test_components()
-    
-
-    randi([1, 3])
-    
+        
+    rand()
 
 %     a.a = [1, 2, 3]; 
 %     a.b = [4, 5, 6];
