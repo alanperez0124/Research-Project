@@ -173,7 +173,7 @@ function[] = TDRA( )
     f(aafDistances, solnOut, u)
 
     % This is line 4 of Algorithm 1: Outline of the TDRA
-    solnTest = apply_heuristic_2_opt(solnOut)
+    solnTest = apply_heuristic_2_opt(solnOut, C0, aafDistances)
 
     WeightInfo = weight_init();
 
@@ -181,7 +181,6 @@ function[] = TDRA( )
     for iIter = 1 : Rmax
         nHeuristic = select_heuristic(WeightInfo);
     end
-
     
 end
 
@@ -637,7 +636,10 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                             jCust, iDrone, iStopLeave, iStopReturn);
 
                         % Check feasibility
-                        bFeasible = check_feasibility(insertedDroneSoln);
+                        if (insertedDroneSoln.anPart3(2) == -3 && insertedDroneSoln.anPart2(2) == 3 && insertedDroneSoln.anPart4(2) == 4)
+                            asdfasdf = 123; 
+                        end
+                        bFeasible = check_feasibility(insertedDroneSoln, C0, aafDistances);
 
                         % Let's check what it looks like
 %                         hold on; 
@@ -1121,13 +1123,21 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
 %               false otherwise
 
     % Local variables
-    %  maxDistance     The max distance permitted 
+    %  maxDistance     The max distance a drone can fly
+    %  alpha           Drone flight multiplier constant
+    %  fDroneDistance  The distance flown by a specific drone
+
+    % Initialize drone flight multiplier constant
+    alpha = 1.5;
 
     % Initialize maxDistance variable
     maxDistance = 10; 
     
     % Initialize bFeasible to true
     bFeasible = 1; 
+
+    % Create variable for all of the customers
+    anCustomers = solnIn.anPart1; 
 
     % Make sure that drone isn't traveling back and forth
     iCustIndex = 1; 
@@ -1143,11 +1153,27 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
     end
 
     % Make sure that the travel distance for each drone is not too far
-    for i = 1 : length(solnIn.anPart3)
-        afDistance = 0;
+    i = 1; 
+    while i <= length(solnIn.anPart3) && bFeasible
+        fDroneDistance = 0; 
         if (solnIn.anPart3(i) ~= -1)
-            
+            % Here, we will do the drone flight distance calculation the
+            % way we did it in the f() function. 
+
+            % Calculate the distance from departure to the customer
+            a = aafDistances( anCustomers(solnIn.anPart3(i)) + 1, solnIn.anPart2(i) + 1); 
+
+            % Calculate the distance from the customer to the arrival
+            b = aafDistances( solnIn.anPart2(i) + 1, anCustomers(solnIn.anPart4(i)) + 1); 
+
+            % Total Drone distance
+            fDroneDistance = (a+b)/alpha;
         end
+
+        if fDroneDistance > maxDistance
+            bFeasible = 0; 
+        end
+        i = i+1; 
     end
 end
 
@@ -1341,7 +1367,8 @@ function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
 
 
    % Check the feasibility
-   if check_feasibility(solnNew, C0, aafDistances) == 0
+   bFeasible = check_feasibility(solnNew, C0, aafDistances); 
+   if bFeasible == 0
        solnNew = apply_heuristic_7_drone_planner(solnNew); 
 
        if check_feasibility(solnNew, C0, aafDistances) == 0

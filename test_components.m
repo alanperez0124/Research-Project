@@ -14,6 +14,7 @@ end
 function[C0, aafDistances ] = get_constants(a, b)
     
     C0 = a;
+    asdf
 
     aafDistances = b; 
 end 
