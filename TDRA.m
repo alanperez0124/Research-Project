@@ -1242,7 +1242,7 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
     end      
 end
 
-function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
+function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
 % This function will implement the 2-opt heuristic which will swap two
 % customers within the vector of Parts 1 and 2. The customers are selected
 % randomly for the 2-Opt method. Chainging the values in Parts 1 and 2
@@ -1251,7 +1251,9 @@ function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
 % infeasibility, we use the DRONE PLANNER HEURISTIC. 
 
 % Input
-%  solnCurr   The current solution 
+%  solnCurr       The current solution 
+%  C0             The locations (coordinates) of the customers
+%  aafDistances   The distances between customer node
 
 % Output
 %  solnBest   The best solution our algorithm was able to determine
@@ -1259,6 +1261,11 @@ function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
     % Variables
     %  nCustA      Randomly selected customer integer
     %  nCustB      Randomly selected customer integer
+    %  nCustomers  Number of customers
+    %  nIndA1      Index of customer A if in part 1 (-1 if not in part 1)
+    %  nIndB1      Index of customer B if in part 1 (-1 if not in part 1)
+    %  nIndA2      Index of customer A if in part 2 (-1 if not in part 1)
+    %  nIndB2      Index of customer B if in part 2 (-1 if not in part 1)
 
     % Get the number of customers
     nCustomers = length(solnCurr.anPart1) - 2; 
@@ -1280,7 +1287,7 @@ function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
     % Find which slot in either part1 or part2 each of A & B are at
     % Part 1
     nIndA1 = -1; 
-    nIndB2 = -1; 
+    nIndB1 = -1; 
     for nIndex = 1 : length(solnCurr.anPart1)
         if nCustA == solnCurr.anPart1(nIndex)
             nIndA1 = nIndex;
@@ -1332,8 +1339,27 @@ function[ solnBest ] = apply_heuristic_2_opt( solnCurr )
         solnNew.anParts(nIndB2) = tempCust; 
     end
 
-    
 
-    
+   % Check the feasibility
+   if check_feasibility(solnNew, C0, aafDistances) == 0
+       solnNew = apply_heuristic_7_drone_planner(solnNew); 
+
+       if check_feasibility(solnNew, C0, aafDistances) == 0
+           solnNew = solnCurr; 
+       end
+   end
+end
+
+function[ solnNew ] = apply_heuristic_7_drone_planner(solnNew) 
+% This function will apply the drone planner heuristic. 
+
+% Input
+
+% Output
+
+    % Variables
+    % 
+
+
 
 end

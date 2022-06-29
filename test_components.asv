@@ -1,0 +1,14 @@
+function[ ] = test_components()
+    
+    
+end
+
+
+
+
+
+function[C0, aafDistances ] = get_constants()
+    C0 = 3; 
+
+    aafDistances = "asdf"; 
+end 
