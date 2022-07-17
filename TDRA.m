@@ -44,13 +44,13 @@ function[] = TDRA( )
 %     C0.x = [ 0 randi([-10, 10], 1, 10) 0 ];
 %     C0.y = [ 0 randi([-10, 10], 1, 10) 0 ];
     
-%     C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
-%     C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
+    C0.x = [ 0 -4 -7 -6 4 6 2 9 8 7 6 0 ];
+    C0.y = [ 0 1 -3 -8 -9 -3 10 9 -2 -8 -8 0];
     
 % %          0  1  2  3  4  0   Customer ID
 % %          1  2  3  4  5  6   Indices
-    C0.x = [ 0  8  6 -7  1  0 ];
-    C0.y = [ 0 -2 -3 -3  2  0 ];
+%     C0.x = [ 0  8  6 -7  1  0 ];
+%     C0.y = [ 0 -2 -3 -3  2  0 ];
 
 %            0  1  2  3  4  5  6  0  Customer ID
 %            1  2  3  4  5  6  7  8  Indices
@@ -1369,7 +1369,7 @@ function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
    % Check the feasibility
    bFeasible = check_feasibility(solnNew, C0, aafDistances); 
    if bFeasible == 0
-       solnNew = apply_heuristic_7_drone_planner(solnNew); 
+       solnNew = apply_heuristic_7_drone_planner(solnNew, C0, aafDistances); 
 
        if check_feasibility(solnNew, C0, aafDistances) == 0
            solnNew = solnCurr; 
@@ -1377,7 +1377,7 @@ function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
    end
 end
 
-function[ solnNew ] = apply_heuristic_7_drone_planner(solnNew) 
+function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances) 
 % This function will apply the drone planner heuristic. 
 
 % Input
@@ -1385,8 +1385,37 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnNew)
 % Output
 
     % Variables
-    % 
+    %   P_j         Nested structure that contains every (i, s) combination
+    %               where i, s in V (set of all nodes in the network) &&
+    %               the flight from i to j to s is in range (< L) && i and
+    %               s are truck customers && i is served before s
+    %  nDrones      Number of drones
 
+    solnNew = solnIn; 
+    % Count the number of drones
+    if isempty(solnIn.anPart2)
+        nDrones = 0; 
+    else
+        nDrones = 1; 
+        i = 0; 
+        while i < length(solnIn.anPart2) 
+            if solnIn.anPart2(i) == -1 
+                nDrones = nDrones + 1; 
+            end
+            i = i + 1; 
+        end
+    end
 
+    % Create the P_j variable 
+    iDroneCustomer = 1; 
+    for iDrone = 1 : nDrones
+        while solnIn.anPart2(iDroneCustomer) ~= -1
+            for iLeaving = 1 : length(solnIn.anPart1)
+                for sReturning = iLeaving + 1
+                end
+            end
+        end
 
+        iDroneCustomer = iDroneCustomer + 1;     
+    end
 end
