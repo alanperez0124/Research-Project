@@ -1085,17 +1085,17 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
     fTotalWaitTime = aafTruckDepartureTime( soln.anPart1(end - 1) + 1 ); 
 
 
-    %% NOTES
-    % WE MIGHT HAVE TO CREATE IF STATEMENT FOR WHAT TO RETURN. For example,
-    % if the last customer is visited by a drone and arrives there before
-    % the truck, we are not interested in waiting for the truck to get
-    % there (since our drone would have already delivered to the customer).
-    %   In this case we don't want to return the aafTruckDepartureTime. 
-
-    % Potential Fix: in the case that we visit a customer and the drone
-    % gets there faster, IF there is a customer to visit afterwards, THEN
-    % we choose the higher time. ELSE (last customer), we take the minimum.
-    % Look at the picture titled "ECA_fig1"
+%     %% NOTES
+%     % WE MIGHT HAVE TO CREATE IF STATEMENT FOR WHAT TO RETURN. For example,
+%     % if the last customer is visited by a drone and arrives there before
+%     % the truck, we are not interested in waiting for the truck to get
+%     % there (since our drone would have already delivered to the customer).
+%     %   In this case we don't want to return the aafTruckDepartureTime. 
+% 
+%     % Potential Fix: in the case that we visit a customer and the drone
+%     % gets there faster, IF there is a customer to visit afterwards, THEN
+%     % we choose the higher time. ELSE (last customer), we take the minimum.
+%     % Look at the picture titled "ECA_fig1"
 
 end
 
@@ -1397,7 +1397,7 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         nDrones = 0; 
     else
         nDrones = 1; 
-        i = 0; 
+        i = 1; 
         while i < length(solnIn.anPart2) 
             if solnIn.anPart2(i) == -1 
                 nDrones = nDrones + 1; 
@@ -1412,10 +1412,13 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         while solnIn.anPart2(iDroneCustomer) ~= -1
             for iLeaving = 1 : length(solnIn.anPart1)
                 for sReturning = iLeaving + 1
+                    P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = ...
+                        [iLeaving, sReturning]; 
                 end
             end
+            
+            iDroneCustomer = iDroneCustomer + 1; 
         end
-
-        iDroneCustomer = iDroneCustomer + 1;     
+     
     end
 end
