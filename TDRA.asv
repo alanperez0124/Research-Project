@@ -557,11 +557,9 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
    
    
    % Sort the customer in descending order from distance to the ellipse
-   afDistanceFromEllipse;
    [ afSortedDistances, anSortedTruckCustomers ] = sort( afDistanceFromEllipse, 2, "descend" );
 
    afSortedDistances;
-   anSortedTruckCustomers;
    
    
    % Get the distance matrix (the distances between all the points)
@@ -571,7 +569,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
     % Now we start looping until no feasible position is available for
     % customers in the list for re-insertion in UAV routes
 %     feasible = 1;  %
-    temp_counter = 0;     % this temporary counter will eventually be removed, 
+%     temp_counter = 0;     % this temporary counter will eventually be removed, 
                           % it is taking place of the feasibility thing
            
     bDone = 0;
@@ -623,7 +621,7 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
             end
 
             % Intialize feasibility for inserting customer into drone
-            bFeasible = 1; 
+%             bFeasible = 1;  
             
             indexindexindex = 1;
             % Check all potential positions in drone route
@@ -636,9 +634,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                             jCust, iDrone, iStopLeave, iStopReturn);
 
                         % Check feasibility
-                        if (insertedDroneSoln.anPart3(2) == -3 && insertedDroneSoln.anPart2(2) == 3 && insertedDroneSoln.anPart4(2) == 4)
-                            asdfasdf = 123; 
-                        end
                         bFeasible = check_feasibility(insertedDroneSoln, C0, aafDistances);
 
                         % Let's check what it looks like
@@ -851,7 +846,6 @@ function[ solnOut ] = ...
     % Initialize the solnOut
     solnOut = solnIn; 
     
-    solnIn;
     while (nDroneCounter ~= iDrone)
         % If we hit a separator (-1) increment the drone
         if (solnIn.anPart3(iPart3Drone) == -1)
@@ -918,10 +912,7 @@ function[ solnOut ] = ...
     solnOut.anPart4( iLeavePlacement ) = iStopReturn; 
     
     % Insert the remaining values iStopLeave to the end of the array
-    solnOut.anPart4 = [ solnOut.anPart4 solnIn.anPart4(iLeavePlacement : end) ]; 
-    
-    
-    solnOut;      
+    solnOut.anPart4 = [ solnOut.anPart4 solnIn.anPart4(iLeavePlacement : end) ];       
 end
 
 function[ sPrime ] = neighbor( soln )
@@ -973,6 +964,49 @@ function[ sPrime ] = neighbor( soln )
     
 end
 
+function[ bValid ] = check_flight_validity( aafDistances, nLeaving, nVisiting, nReturning ) 
+% Check flight validity will take a matrix of distances, as well as the
+% leaving, visiting, and returning nodes of a drone flight path. It will
+% then determine if the flight distance of the drone falls within
+% parameters. 
+
+% Input
+%   aafDistances    Matrix of distances between customer nodes
+%   nLeaving        The node from which the drone will be leaving
+%   nVisiting       The customer node which the drone visits
+%   nReturning      The cusotmer that the drone returns to 
+% Output
+%   bValid          Boolean variable that determines whether the flight
+%                       path is valid
+
+    % Variables
+    % maxDistance   The maximum flight distance a drone can fly
+    % alpha         The factor by which the flight distance is divided to
+    %                 account for drone speed
+    % a             Distance from departure to the customer
+    % b             Distnace from the customer to the returning depot
+    % fDrone Distance   The total "distance" flown by the drone
+    
+
+    % Initialize max flight distance, alpha, and boolean valid variable
+    maxDistance = 10; 
+    alpha = 1.5;
+    bValid = 1; 
+    
+    % Calculate the distance from departure to the customer
+    a = aafDistances(nLeaving+1, nVisiting+1); 
+
+    % Calculate the distance from the customer to the returning
+    b = aafDistances(nVisiting+1, nReturning+1); 
+
+    % Total drone distance 
+    fDroneDistance = (a+b)/alpha; 
+
+    if fDroneDistance > maxDistance
+        bValid = 0; 
+    end
+end
+
 function[ fTotalWaitTime ] = f( aafDistances, soln, k)
 % This function f is our wait time function. In this case, we treat
 %  the time = distance for our trucks and we calculate the time for the 
@@ -998,19 +1032,10 @@ function[ fTotalWaitTime ] = f( aafDistances, soln, k)
     % Create temporary list of customers
     anCustomers = soln.anPart1;
     
-    
-    % Initialize total wait time
-    fTotalWaitTime = 0;
-    
-    
     % Create vector arrival and departure times for drones and trucks
     aafDroneArrivalTime = zeros(k, length(aafDistances));
     aafTruckArrivalTime = zeros(1, length(aafDistances));
     aafTruckDepartureTime = zeros(1, length(aafDistances));
-    
-    
-    soln;
-    aafDistances;
     
     % Calculate the total wait time for the truck customers
     iPrevious = 1; 
@@ -1356,13 +1381,13 @@ function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
     elseif nIndA1 ~= -1 && nIndB1 ~= -1
         tempCust = solnNew.anPart1(nIndA1); 
         solnNew.anPart1(nIndA1) = solnNew.anPart1(nIndB1); 
-        solnNew.anPart(nIndB1) = tempCust; 
+        solnNew.anPart1(nIndB1) = tempCust; 
 
     % customer a and b are in part 2
     elseif nIndA2 ~= -1 && nIndB2 ~= -1
         tempCust = solnNew.anPart2(nIndA2);
         solnNew.anPart2(nIndA2) = solnNew.anPart2(nIndB2); 
-        solnNew.anParts(nIndB2) = tempCust; 
+        solnNew.anPart2(nIndB2) = tempCust; 
     end
 
 
@@ -1397,7 +1422,7 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         nDrones = 0; 
     else
         nDrones = 1; 
-        i = 0; 
+        i = 1; 
         while i < length(solnIn.anPart2) 
             if solnIn.anPart2(i) == -1 
                 nDrones = nDrones + 1; 
@@ -1407,17 +1432,36 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     end
 
     % Create the P_j variable 
+    n = length(solnIn.anPart1) - 1; 
+    
     iDroneCustomer = 1; 
     for iDrone = 1 : nDrones
-        while solnIn.anPart2(iDroneCustomer) ~= -1
+        while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
+            iRow = 1; 
+            P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
             for iLeaving = 1 : length(solnIn.anPart1)
-                for sReturning = iLeaving + 1
-                    P_j(iDrone).Customer(
+                for sReturning = iLeaving + 1 : length(solnIn.anPart1)
+                    % Only add solution if it is feasible
+                    if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnInt.anPart1(sReturning))
+                        P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
+                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
+                        iRow = iRow + 1;
+                    end
+                    
+                     
+
+                    % Remove the infeasible combinations from the structure
+
+
                 end
+                
             end
-            
             iDroneCustomer = iDroneCustomer + 1; 
         end
-     
+        iDroneCustomer = iDroneCustomer + 1; 
     end
+
+
+
+    
 end
