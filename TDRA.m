@@ -1407,18 +1407,23 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     end
 
     % Create the P_j variable 
+    n = length(solnIn.anPart1) - 1; 
+    
     iDroneCustomer = 1; 
     for iDrone = 1 : nDrones
-        while solnIn.anPart2(iDroneCustomer) ~= -1
+        while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
+            iRow = 1; 
+            P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
             for iLeaving = 1 : length(solnIn.anPart1)
-                for sReturning = iLeaving + 1
-                    P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = ...
-                        [iLeaving, sReturning]; 
+                for sReturning = iLeaving + 1 : length(solnIn.anPart1)
+                    P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
+                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
+                    iRow = iRow + 1; 
                 end
+                
             end
-            
             iDroneCustomer = iDroneCustomer + 1; 
         end
-     
+        iDroneCustomer = iDroneCustomer + 1; 
     end
 end

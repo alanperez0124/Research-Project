@@ -64,9 +64,10 @@ function[ ] = test_components()
     P_j(1).Customer(1).aanCust 
     P_j(2).Customer(12).aanCust 
     
-
     
-     
+    
+    
+    
     
 end
 
