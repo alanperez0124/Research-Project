@@ -1406,19 +1406,15 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
 % This function will apply the drone planner heuristic. 
 
 % Input
-%   solnIn          The input solution structure
-%   C0              The locations (coordinates) of the customers
-%   aafDistances    Matrix of all distances between nodes
+
 % Output
-%   solnNew         The new solution created from the drone planner
-%                       heuristic
 
     % Variables
     %   P_j         Nested structure that contains every (i, s) combination
     %               where i, s in V (set of all nodes in the network) &&
     %               the flight from i to j to s is in range (< L) && i and
     %               s are truck customers && i is served before s
-    %  nDrones      Number of drones           
+    %  nDrones      Number of drones
 
     solnNew = solnIn; 
     % Count the number of drones
@@ -1442,23 +1438,21 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     for iDrone = 1 : nDrones
         while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
             iRow = 1; 
-<<<<<<< HEAD
             P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
             for iLeaving = 1 : length(solnIn.anPart1)
                 for sReturning = iLeaving + 1 : length(solnIn.anPart1)
-                    P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
-                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
-                    iRow = iRow + 1; 
-=======
-            for iLeaving = 1 : length(solnIn.anPart1)
-                for sReturning = iLeaving + 1 : length(solnIn.anPart1)
                     % Only add solution if it is feasible
-                    if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnIn.anPart1(sReturning))
+                    if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnInt.anPart1(sReturning))
                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
                         iRow = iRow + 1;
                     end
->>>>>>> 0f07e10aea4af253f3029b1f6ccc86dbbbe051f9
+                    
+                     
+
+                    % Remove the infeasible combinations from the structure
+
+
                 end
                 
             end
@@ -1466,6 +1460,8 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         end
         iDroneCustomer = iDroneCustomer + 1; 
     end
+
+
 
     
 end
