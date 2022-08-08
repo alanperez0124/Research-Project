@@ -1442,14 +1442,15 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     for iDrone = 1 : nDrones
         while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
             iRow = 1; 
-<<<<<<< HEAD
             P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
             for iLeaving = 1 : length(solnIn.anPart1)
                 for sReturning = iLeaving + 1 : length(solnIn.anPart1)
                     P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
                     iRow = iRow + 1; 
-=======
+                end
+            end
+            
             for iLeaving = 1 : length(solnIn.anPart1)
                 for sReturning = iLeaving + 1 : length(solnIn.anPart1)
                     % Only add solution if it is feasible
@@ -1458,13 +1459,27 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
                         iRow = iRow + 1;
                     end
->>>>>>> 0f07e10aea4af253f3029b1f6ccc86dbbbe051f9
                 end
                 
             end
             iDroneCustomer = iDroneCustomer + 1; 
         end
         iDroneCustomer = iDroneCustomer + 1; 
+    end
+    
+    % Run algorithm
+    for iteration = 1 : 10 
+        P_jCopy = P_j; 
+        iDrone = 0; 
+        bDone = 0; 
+        while iDrone < nDrones && bDone ~= 1
+            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
+                % Randomly pick (i, s) from P_c
+                anDimensions = size();
+
+
+            end
+        end
     end
 
     

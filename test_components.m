@@ -58,7 +58,46 @@ function[ ] = test_components()
         iDroneCustomer = iDroneCustomer + 1; 
     end
     
-    P_j(2).Customer(12).aanCust
+    P_j(1).Customer(11).aanCust
+    P_j(1).Customer(1).aanCust
+    
+    % Run algorithm
+    for iteration = 1 : 10
+        P_jCopy = P_j; 
+        iDrone = 1; 
+        bDone = 0; 
+        iDroneCustomer = 1; 
+        while iDrone < nDrones && bDone ~= 1
+            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
+                % Randomly pick (i, s) from P_c (if possible)
+                anDimensions = size(P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust);
+                if anDimensions(1) == 0
+                    bDone = 1; 
+                else
+                    nRows = anDimensions(1); 
+                    nCols = anDimensions(2); 
+
+                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
+                    nRandi = randi(nRows); 
+                    nRands = randi(nCols);
+                    
+                    % Assign launch i and reconvene s locations to customer j
+                    % HOW
+                    % 
+                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer))
+                    
+                    
+
+
+
+                end
+
+
+
+
+            end
+        end
+    end
 
 
 end
