@@ -1456,5 +1456,31 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         iDroneCustomer = iDroneCustomer + 1; 
     end
 
+    % Run algorithm
+    iDroneCustomer = 1; 
+    for iteration = 1 : 10
+        iDrone = 1; 
+        bDone = 0; 
+        while iDrone < nDrones && bDone ~= 1
+            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= 1
+                % Select the customer with index iDroneCustomer in the route of UAV iDrone
+                nCustomer = solnIn.anPart2(iDroneCustomer); 
+
+                % Randomly pick (i, s) from P_C; If can set, bDone = 1
+                
+                
+                % For all other customers j of current drone
+
+
+            end
+        end
+    end
+
+
+
+
+
+
+
     
 end

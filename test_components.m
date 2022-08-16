@@ -48,8 +48,9 @@ function[ ] = test_components()
                     if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnIn.anPart1(sReturning))
                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
-                        iRow = iRow + 1; 
+                        iRow = iRow + 1;
                     end
+                    
                 end
                 
             end
@@ -58,7 +59,33 @@ function[ ] = test_components()
         iDroneCustomer = iDroneCustomer + 1; 
     end
     
-    P_j(2).Customer(12).aanCust
+    size(P_j(2).Customer(12).aanCust)
+
+
+    % Run algorithm
+    iDroneCustomer = 1; 
+    for iteration = 1 : 10
+        iDrone = 1; 
+        bDone = 0; 
+        while iDrone < nDrones && bDone ~= 1
+            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= 1
+                % Select the customer with index iDroneCustomer in the route of UAV iDrone
+                nCustomer = solnIn.anPart2(iDroneCustomer); 
+
+                % Randomly pick (i, s) from P_C; If can set, bDone = 1
+                anDimensions = size(P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust); 
+                nRows = anDimensions(1); 
+                nCols = anDimensions(2); 
+
+                nRandomi = randi(nRows); 
+                nRandoms = randi(nCols); 
+                
+                % For all other customers j of current drone
+
+
+            end
+        end
+    end
 
     
 end
