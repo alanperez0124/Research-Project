@@ -1468,36 +1468,34 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     end
     
     % Run algorithm
-    for iteration = 1 : 10 
-        P_jCopy = P_j; 
-        iDrone = 0; 
-        bDone = 0; 
-        while iDrone < nDrones && bDone ~= 1
-            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
-                % Randomly pick (i, s) from P_c
-                anDimensions = size();
-
-
-            end
-        end
-    end
-
     % Run algorithm
-    iDroneCustomer = 1; 
     for iteration = 1 : 10
+        P_jCopy = P_j; 
         iDrone = 1; 
         bDone = 0; 
+        iDroneCustomer = 1; 
         while iDrone < nDrones && bDone ~= 1
-            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= 1
-                % Select the customer with index iDroneCustomer in the route of UAV iDrone
-                nCustomer = solnIn.anPart2(iDroneCustomer); 
+            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
+                % Randomly pick (i, s) from P_c (if possible)
+                anDimensions = size(P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust);
+                if anDimensions(1) == 0
+                    bDone = 1; 
+                else
+                    nRows = anDimensions(1); 
+                    nCols = anDimensions(2); 
 
-                % Randomly pick (i, s) from P_C; If can set, bDone = 1
-                
-                
-                % For all other customers j of current drone
+                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
+                    nRandi = randi(nRows); 
+                    nRands = randi(nCols);
+                    
+                    % Assign launch i and reconvene s locations to customer j
+                    % HOW
+                    % 
+                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer))
 
-
+                    % Update P_j according to the previously assigned
+                    % flights to UAV_u
+                end
             end
         end
     end

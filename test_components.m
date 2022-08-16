@@ -117,16 +117,7 @@ function[ ] = test_components()
                     % HOW
                     % 
                     P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer))
-                    
-                    
-
-
-
                 end
-
-
-
-
             end
         end
     end
