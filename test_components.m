@@ -38,16 +38,29 @@ function[ ] = test_components()
     solnNew = solnIn; 
     
     % Remove all UAV flights from S_new
-    solnNew.anPart2 = []; 
-    solnNew.anPart3 = [];
-    solnNew.anPart4 = []; 
-    for iDrone = 1 : nDrones
-        solnNew.anPart2 = -1; 
-        solnNew.anPart3 = -1; 
-        solnNew.anPart4 = -1; 
+%     solnNew.anPart2 = []; 
+%     solnNew.anPart3 = [];
+%     solnNew.anPart4 = []; 
+%     for iDrone = 1 : nDrones
+%         solnNew.anPart2 = -1; 
+%         solnNew.anPart3 = -1; 
+%         solnNew.anPart4 = -1; 
+%     end
+    iCustomer = 1; 
+    iDrone = 1; 
+    while iCustomer <= length(solnNew.anPart2) && iDrone <= nDrones
+        if solnNew.anPart2(iCustomer) == -1
+            iDrone = iDrone + 1; 
+        else
+%             solnNew.anPart2(iCustomer) = 0;
+            solnNew.anPart3(iCustomer) = 0;
+            solnNew.anPart4(iCustomer) = 0;
+        end
+        iCustomer = iCustomer + 1; 
     end
-        
 
+    solnNew
+    
 
     % Create the P_j structure
     n = length(solnIn.anPart1) - 1; 
@@ -77,34 +90,6 @@ function[ ] = test_components()
     size(P_j(2).Customer(12).aanCust)
 
 
-    % Run algorithm
-%     iDroneCustomer = 1; 
-%     for iteration = 1 : 10
-%         iDrone = 1; 
-%         bDone = 0; 
-%         while iDrone < nDrones && bDone ~= 1
-%             while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= 1
-%                 % Select the customer with index iDroneCustomer in the route of UAV iDrone
-%                 nCustomer = solnIn.anPart2(iDroneCustomer); 
-% 
-%                 % Randomly pick (i, s) from P_C; If can set, bDone = 1
-%                 anDimensions = size(P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust); 
-%                 nRows = anDimensions(1); 
-%                 nCols = anDimensions(2); 
-% 
-%                 nRandomi = randi(nRows); 
-%                 nRandoms = randi(nCols); 
-%                 
-%                 % For all other customers j of current drone
-% 
-% 
-%             end
-%         end
-%     end
-
-
-%     P_j(1).Customer(11).aanCust
-%     P_j(1).Customer(1).aanCust
 
     
     % Run algorithm
@@ -122,14 +107,17 @@ function[ ] = test_components()
                     bDone = 1; 
                 else
                     nRows = anDimensions(1); 
-                    nCols = anDimensions(2); 
+%                     nCols = anDimensions(2); 
 
                     P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
                     nRandi = randi(nRows); 
-                    nRands = randi(nCols);
+%                     nRands = randi(nCols);
                     
                     % Assign launch i and reconvene s locations to customer j
-                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust()
+                    solnNew.anPart3(iDroneCustomer) = P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(nRandi, 1); 
+                    solnNew.anPart4(iDroneCustomer) = P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(nRandi, 2);
+                    
+                    solnNew
 
                     % Update P_j according to the previously assigned flights to UAV_u
 
