@@ -1435,11 +1435,6 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         end
     end
 
-    % Remove all UAV flights from S_out
-    solnNew.anPart2(1) = []; 
-    solnNew
-
-
     % Create the P_j variable 
     n = length(solnIn.anPart1) - 1; 
     
@@ -1494,17 +1489,15 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
                     nRands = randi(nCols);
                     
                     % Assign launch i and reconvene s locations to customer j
+                    % HOW
+                    % 
                     P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer))
 
                     % Update P_j according to the previously assigned flights to UAV_u
 
                     % for each customer that drone iDrone is delivering to
                         % for each possible set i, s values for that drone
-                            % if i < nRandi && s <= nRandi: bOk = 1; 
-
-                            % elseif i >= nRands && s > nRandi: bOk = 1; 
-
-                            % else bOk = 0; 
+                            % if 
                         
                 end
             end

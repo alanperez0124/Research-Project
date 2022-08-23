@@ -38,15 +38,16 @@ function[ ] = test_components()
     solnNew = solnIn; 
     
     % Remove all UAV flights from S_new
-    solnNew.anPart2 = []; 
-    solnNew.anPart3 = [];
-    solnNew.anPart4 = []; 
-    for iDrone = 1 : nDrones
-        solnNew.anPart2 = -1; 
-        solnNew.anPart3 = -1; 
-        solnNew.anPart4 = -1; 
+    iDrone = 1; 
+    iCustomer = length(solnNew.anPart2); 
+    while iDrone < nDrones && iCustomer > 0
+        if solnNew.anPart2(iCustomer) == -1
+            iDrone = iDrone + 1; 
+        else 
+            solnNew.anPart2(iCustomer) = []
+
+            iCustomer = iCustomer + 1; 
     end
-        
 
 
     % Create the P_j structure
