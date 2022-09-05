@@ -1440,29 +1440,25 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     solnNew
 
 
-    % Create the P_j variable 
+    % Create the P_j structure
     n = length(solnIn.anPart1) - 1; 
+    
     iDroneCustomer = 1; 
     for iDrone = 1 : nDrones
         while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
             iRow = 1; 
-            P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
-            for iLeaving = 1 : length(solnIn.anPart1)
-                for sReturning = iLeaving + 1 : length(solnIn.anPart1)
-                    P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
-                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
-                    iRow = iRow + 1; 
-                end
-            end
-            
-            for iLeaving = 1 : length(solnIn.anPart1)
+%             P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
+            for iLeaving = 1 : length(solnIn.anPart1) - 1  % subtract 1 because it drone can't leave from last spot
                 for sReturning = iLeaving + 1 : length(solnIn.anPart1)
                     % Only add solution if it is feasible
                     if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnIn.anPart1(sReturning))
+%                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
+%                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
-                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
+                        [iLeaving, sReturning];
                         iRow = iRow + 1;
                     end
+                    
                 end
                 
             end
@@ -1470,6 +1466,9 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         end
         iDroneCustomer = iDroneCustomer + 1; 
     end
+
+
+    
     
     % Run algorithm
     for iteration = 1 : 10
