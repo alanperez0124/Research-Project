@@ -52,14 +52,12 @@ function[ ] = test_components()
         if solnNew.anPart2(iCustomer) == -1
             iDrone = iDrone + 1; 
         else
-%             solnNew.anPart2(iCustomer) = 0;
             solnNew.anPart3(iCustomer) = 0;
             solnNew.anPart4(iCustomer) = 0;
         end
         iCustomer = iCustomer + 1; 
     end
 
-    solnNew
     
 
     % Create the P_j structure
@@ -70,12 +68,14 @@ function[ ] = test_components()
         while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
             iRow = 1; 
 %             P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust = zeros(n*(n+1)/2, 2); % the number of possible permutations
-            for iLeaving = 1 : length(solnIn.anPart1)
+            for iLeaving = 1 : length(solnIn.anPart1) - 1  % subtract 1 because it drone can't leave from last spot
                 for sReturning = iLeaving + 1 : length(solnIn.anPart1)
                     % Only add solution if it is feasible
                     if check_flight_validity(aafDistances, solnIn.anPart1(iLeaving), solnIn.anPart2(iDroneCustomer), solnIn.anPart1(sReturning))
+%                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
+%                         [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
                         P_j(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iRow, :) = ...
-                        [solnIn.anPart1(iLeaving), solnIn.anPart1(sReturning)];
+                        [iLeaving, sReturning];
                         iRow = iRow + 1;
                     end
                     
@@ -87,7 +87,6 @@ function[ ] = test_components()
         iDroneCustomer = iDroneCustomer + 1; 
     end
     
-    size(P_j(2).Customer(12).aanCust)
 
 
 
@@ -99,27 +98,62 @@ function[ ] = test_components()
         bDone = 0; 
         iDroneCustomer = 1; 
         while iDrone < nDrones && bDone ~= 1
-            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
+            while iDroneCustomer < length(solnNew.anPart2) && solnNew.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
                 % Randomly pick (i, s) from P_c (if possible)
-                P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
-                anDimensions = size(P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust);
+%                 fprintf("iDrone: %d\n", iDrone)
+%                 fprintf("Customer: %d\n", solnNew.anPart2(iDroneCustomer))
+%                 P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust
+                anDimensions = size(P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust);
+
+%                 solnNew
                 if anDimensions(1) == 0
                     bDone = 1; 
                 else
                     nRows = anDimensions(1); 
-%                     nCols = anDimensions(2); 
+ 
+                    nRandRow = randi(nRows);
+                    nRandi = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(nRandRow, 1);
+                    nRands = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(nRandRow, 2);
 
-                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
-                    nRandi = randi(nRows); 
-%                     nRands = randi(nCols);
                     
                     % Assign launch i and reconvene s locations to customer j
-                    solnNew.anPart3(iDroneCustomer) = P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(nRandi, 1); 
-                    solnNew.anPart4(iDroneCustomer) = P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(nRandi, 2);
+                    solnNew.anPart3(iDroneCustomer) = nRandi; 
+                    solnNew.anPart4(iDroneCustomer) = nRands;
                     
-                    solnNew
+%                     solnNew
 
-                    % Update P_j according to the previously assigned flights to UAV_u
+%                     P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust
+%                     P_jCopy(iDrone).Customer(1).aanCust
+                    % Update P_jCopy according to the previously assigned flights to UAV_u
+                    iTempRow = 1; 
+                    for iRow = 1 : nRows
+                        i = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(iRow, 1);
+                        s = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(iRow, 2); 
+
+                        if i < nRandi && s <= nRandi
+                            P_jCopy2(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iTempRow, :) = ...
+                            [i, s];
+                            iTempRow = iTempRow + 1; 
+                        elseif i >= nRands && s > nRandi
+                            P_jCopy2(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iTempRow, :) = ...
+                            [i, s];
+                            iTempRow = iTempRow + 1; 
+                        else
+                            bOk = 0; 
+                        end
+                        
+                        anDimensions = size(P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust);
+                        if iRow == nRows && anDimensions(1) == 0
+                            P_jCopy2 = P_jCopy; 
+                        end
+
+                    end
+                    
+                    % Actually update P_jCopy
+                    P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust = P_jCopy2(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust;
+%                     P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust
+%                     P_jCopy(iDrone).Customer(1).aanCust
+%                         
 
                     % for each customer that drone iDrone is delivering to
                         % for each possible set i, s values for that drone
@@ -128,8 +162,11 @@ function[ ] = test_components()
                             % elseif i >= nRands && s > nRandi: bOk = 1; 
 
                             % else bOk = 0
+                    % Iterate iDroneCustomer
+                    iDroneCustomer = iDroneCustomer + 1; 
                 end
             end
+            iDrone = iDrone + 1; 
         end
     end
 

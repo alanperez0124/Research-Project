@@ -1442,7 +1442,6 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
 
     % Create the P_j variable 
     n = length(solnIn.anPart1) - 1; 
-    
     iDroneCustomer = 1; 
     for iDrone = 1 : nDrones
         while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1           
@@ -1472,7 +1471,6 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         iDroneCustomer = iDroneCustomer + 1; 
     end
     
-    % Run algorithm
     % Run algorithm
     for iteration = 1 : 10
         P_jCopy = P_j; 
