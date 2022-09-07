@@ -1477,34 +1477,60 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         bDone = 0; 
         iDroneCustomer = 1; 
         while iDrone < nDrones && bDone ~= 1
-            while iDroneCustomer < length(solnIn.anPart2) && solnIn.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
+            while iDroneCustomer < length(solnNew.anPart2) && solnNew.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
                 % Randomly pick (i, s) from P_c (if possible)
-                anDimensions = size(P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust);
+%                 fprintf("iDrone: %d\n", iDrone)
+%                 fprintf("Customer: %d\n", solnNew.anPart2(iDroneCustomer))
+                anDimensions = size(P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust);
+
                 if anDimensions(1) == 0
                     bDone = 1; 
                 else
                     nRows = anDimensions(1); 
-                    nCols = anDimensions(2); 
+ 
+                    nRandRow = randi(nRows);
+                    nRandi = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(nRandRow, 1);
+                    nRands = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(nRandRow, 2);
 
-                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust
-                    nRandi = randi(nRows); 
-                    nRands = randi(nCols);
                     
                     % Assign launch i and reconvene s locations to customer j
-                    P_jCopy(iDrone).Customer(solnIn.anPart2(iDroneCustomer))
+                    solnNew.anPart3(iDroneCustomer) = nRandi; 
+                    solnNew.anPart4(iDroneCustomer) = nRands;
+                    
 
-                    % Update P_j according to the previously assigned flights to UAV_u
+                    % Update P_jCopy according to the previously assigned flights to UAV_u
+                    iTempRow = 1; 
+                    for iRow = 1 : nRows
+                        i = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(iRow, 1);
+                        s = P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust(iRow, 2); 
 
-                    % for each customer that drone iDrone is delivering to
-                        % for each possible set i, s values for that drone
-                            % if i < nRandi && s <= nRandi: bOk = 1; 
-
-                            % elseif i >= nRands && s > nRandi: bOk = 1; 
-
-                            % else bOk = 0; 
+                        if i < nRandi && s <= nRandi
+                            P_jCopy2(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iTempRow, :) = ...
+                            [i, s];
+                            iTempRow = iTempRow + 1; 
+                        elseif i >= nRands && s > nRandi
+                            P_jCopy2(iDrone).Customer(solnIn.anPart2(iDroneCustomer)).aanCust(iTempRow, :) = ...
+                            [i, s];
+                            iTempRow = iTempRow + 1; 
+                        else
+                            bOk = 0; 
+                        end
                         
+                        anDimensions = size(P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust);
+                        if iRow == nRows && anDimensions(1) == 0
+                            P_jCopy2 = P_jCopy; 
+                        end
+
+                    end
+                    
+                    % Actually update P_jCopy
+                    P_jCopy(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust = P_jCopy2(iDrone).Customer(solnNew.anPart2(iDroneCustomer)).aanCust;
+
+                    % Iterate iDroneCustomer
+                    iDroneCustomer = iDroneCustomer + 1; 
                 end
             end
+            iDrone = iDrone + 1; 
         end
     end
 
