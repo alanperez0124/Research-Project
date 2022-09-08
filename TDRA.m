@@ -172,8 +172,14 @@ function[] = TDRA( )
     
     f(aafDistances, solnOut, u)
 
+    answerBeforeHueristic2Opt = solnOut
+    beforeResult = f(aafDistances, answerBeforeHueristic2Opt, u)
+
     % This is line 4 of Algorithm 1: Outline of the TDRA
-    solnTest = apply_heuristic_2_opt(solnOut, C0, aafDistances)
+    answerAfterHueristic2Opt = apply_heuristic_2_opt(solnOut, C0, aafDistances)
+    afterResult = f(aafDistances, answerAfterHueristic2Opt, u)
+
+    
 
     WeightInfo = weight_init();
 
@@ -1144,8 +1150,8 @@ function[ bFeasible ] = check_feasibility( solnIn, C0, aafDistances )
 %  C0             The customer locations
 %  aafDistances   The distances between customer nodes
 % Output
-%   bFeasible  Boolean value that is true if the solution is feasible; 
-%               false otherwise
+%   bFeasible  Boolean value that is true (1) if the solution is feasible; 
+%               false (0) otherwise
 
     % Local variables
     %  maxDistance     The max distance a drone can fly
@@ -1230,7 +1236,7 @@ function[ WeightInfo ] = weight_init()
     %                       the code; 
 
     % Number of heuristics
-    numHeuristics = 2; 
+    numHeuristics = 3; 
     
     % Initialize WeightInfo
     WeightInfo.afScores = zeros(1, numHeuristics); % 2 heuristics 
@@ -1436,8 +1442,17 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     end
 
     % Remove all UAV flights from S_out
-    solnNew.anPart2(1) = []; 
-    solnNew
+    iCustomer = 1; 
+    iDrone = 1; 
+    while iCustomer <= length(solnNew.anPart2) && iDrone <= nDrones
+        if solnNew.anPart2(iCustomer) == -1
+            iDrone = iDrone + 1; 
+        else
+            solnNew.anPart3(iCustomer) = 0;
+            solnNew.anPart4(iCustomer) = 0;
+        end
+        iCustomer = iCustomer + 1; 
+    end
 
 
     % Create the P_j structure
@@ -1476,7 +1491,8 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
         iDrone = 1; 
         bDone = 0; 
         iDroneCustomer = 1; 
-        while iDrone < nDrones && bDone ~= 1
+
+        while iDrone <= nDrones && bDone ~= 1
             while iDroneCustomer < length(solnNew.anPart2) && solnNew.anPart2(iDroneCustomer) ~= -1 && bDone ~= -1
                 % Randomly pick (i, s) from P_c (if possible)
 %                 fprintf("iDrone: %d\n", iDrone)
@@ -1533,12 +1549,129 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
             iDrone = iDrone + 1; 
         end
     end
+end
 
+function[ solnNew ] = apply_heuristic_3_opt( solnCurr, C0, aafDistances )
+% This function will implement the 2-opt heuristic which will swap two
+% customers within the vector of Parts 1 and 2. The customers are selected
+% randomly for the 2-Opt method. Chainging the values in Parts 1 and 2
+% while keeping the values in Parts 3 and 4 unchanged may lead to an
+% infeasible solution due to the flight range constraint. In the case of
+% infeasibility, we use the DRONE PLANNER HEURISTIC. 
 
+% Input
+%  solnCurr       The current solution 
+%  C0             The locations (coordinates) of the customers
+%  aafDistances   The distances between customer node
 
+% Output
+%  solnBest   The best solution our algorithm was able to determine
 
+    % Variables
+    %  nCustA      Randomly selected customer integer
+    %  nCustB      Randomly selected customer integer
+    %  nCustC      Randomly selected customer integer
+    %  nCustomers  Number of customers
+    %  nIndA1      Index of customer A if in part 1 (-1 if not in part 1)
+    %  nIndB1      Index of customer B if in part 1 (-1 if not in part 1)
+    %  nIndA2      Index of customer A if in part 2 (-1 if not in part 1)
+    %  nIndB2      Index of customer B if in part 2 (-1 if not in part 1)
 
+    % Get the number of customers
+    nCustomers = length(solnCurr.anPart1) - 2; 
 
-
+    for i = 1 : length(solnCurr.anPart2) 
+        if solnCurr.anPart2(i) ~= -1
+            nCustomers = nCustomers + 1; 
+        end
+    end
     
+    % Get customers to be swapped
+    nCustA = randi([1, nCustomers]); % Ignore the 2 zeros
+    nCustB = randi([1, nCustomers]);
+    nCustC = randi([1, nCustomers]);
+    
+    while nCustB == nCustA
+        nCustB = randi([1, nCustomers]);
+    end
+
+    while nCustC == nCustA || nCustC == nCustB
+        nCustC = randi([1, nCustomers]);
+    end
+
+    % Find which slot in either part1 or part2 each of A & B & C are at
+    nPartA = 2; 
+    nIndA  = -1; 
+    nPartB = 2;
+    nIndB  = -1; 
+    nPartC = 2;
+    nIndC  = -1; 
+
+    for nIndex = 1 : length(solnCurr.anPart1)
+        if nCustA == solnCurr.anPart1(nIndex)
+            nPartA = 1; 
+            nIndA = nIndex;
+        end
+
+        if nCustB == solnCurr.anPart1(nIndex)
+            nPartB = 1; 
+            nIndB = nIndex; 
+        end
+
+        if nCustC == solnCurr.anPart1(nIndex)
+            nPartC = 1;
+            nIndC = nIndex;
+        end
+    end
+
+
+    for nIndex = 1 : length(solnCurr.anPart2)
+        if nCustA == solnCurr.anPart2(nIndex)
+            nIndA = nIndex;
+        end
+
+        if nCustB == solnCurr.anPart2(nIndex)
+            nIndB = nIndex; 
+        end
+
+        if nCustC == solnCurr.anPart2(nIndex)
+            nIndC = nIndex;
+        end
+    end
+
+    % customer a in part 1 and customer b in part 1
+    solnNew = solnCurr; 
+
+    % Move customer C into customer A
+    if nPartA == 1 
+        solnNew.anPart1(nIndA) = nCustC; 
+
+    else
+        solnNew.anPart2(nIndA) = nCustC; 
+    end
+
+    % Move customer A into customer B
+    if nPartB == 1
+        solnNew.anPart1(nIndB) = nCustA; 
+    else
+        solnNew.anPart2(nIndB) = nCustA; 
+    end
+
+    % Move customer B into customer C
+    if nPartC == 1
+        solnNew.anPart1(nIndC) = nCustB; 
+    else
+        solnNew.anPart2(nIndC) = nCustB; 
+    end
+
+
+   % Check the feasibility
+   bFeasible = check_feasibility(solnNew, C0, aafDistances); 
+   if bFeasible == 0
+       solnNew = apply_heuristic_7_drone_planner(solnNew, C0, aafDistances); 
+
+       if check_feasibility(solnNew, C0, aafDistances) == 0
+           solnNew = solnCurr; 
+       end
+   end
 end
