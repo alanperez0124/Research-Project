@@ -80,8 +80,6 @@ function[] = TDRA( )
 %     C0.y = [0 sqrt( 1 - (C0.x(1 : 9).^2)/4 ) [ -1*sqrt( 1 - (C0.x(10 : 18).^2)/4 ) ] 0 ]
     
 
-
-
     % Plot the customer locations
 %     hold on
 %     figure( 1 );
@@ -89,7 +87,6 @@ function[] = TDRA( )
 %     plot(C0.x, C0.y, 'bo')
 %     hold off
 
-    
     % Numbers of customers (excluding the depot) 
     c = length(C0.x) - 2;
     
@@ -118,7 +115,9 @@ function[] = TDRA( )
     
     % Generate initial solution s, to the STRPD based on SA
     s = simulatedAnnealing(c, aafDistances, soln, T0, TFinal, Beta_SA, Imax, u);
-    
+
+    % Plot the truck and drone route
+    plot_route( C0, s, 1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Test plotting our path with drones
     % THis is correct btw
@@ -131,17 +130,17 @@ function[] = TDRA( )
 %     s.anPart3 = [ 1 -1 4 ];
 %     s.anPart2 = [ 5 -1 6 ];
 %     s.anPart4 = [ 3 -1 5 ]; 
-    
+%     
 %     s.anPart1 = [ 0 4 2 0 ];
 %     s.anPart3 = [ 2 3 -1 ];   % These indices refer to the cell number in part 1, so this is wrong. 
 %     s.anPart2 = [ 1 3 -1 ];   % visits customer 1
 %     s.anPart4 = [ 3 4 -1 ];   % returns to index 2 of s.anPart1 (which is customer 3)
-
+% 
 %     s.anPart1 = [ 0 4 2 0 ];
 %     s.anPart3 = [ 2 -1 3 ];   % These indices refer to the cell number in part 1, so this is wrong. 
 %     s.anPart2 = [ 1 -1 3 ];   % visits customer 1
 %     s.anPart4 = [ 3 -1 4 ];   % returns to index 2 of s.anPart1 (which is customer 3)
-
+% 
 %     s.anPart1 = [ 0 4 2 0 ];
 %     s.anPart3 = [ 2 -1 3 ];   % These indices refer to the cell number in part 1, so this is wrong. 
 %     s.anPart2 = [ 1 -1 3 ];   % visits customer 1
@@ -149,15 +148,10 @@ function[] = TDRA( )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    % Plot the truck and drone route
-    plot_route( C0, s, 1);
-    
-    
     % Initialize best solution, the rsult of the best solution, the 
     % iteration number, and the temperature
     s_best = s;
     fs_best = f(aafDistances, s_best, u);
-    
     
     % Elliptical stuff
     solnOut = ellipticalCustomerAssignment( s_best, C0, u);
@@ -170,6 +164,18 @@ function[] = TDRA( )
     plot_route( C0, solnOut, 4)
     hold off; 
     
+    WeightInfo = weight_init();
+
+    Rmax = 10; 
+    for iIter = 1 : Rmax
+        % Select a heuristic
+        nHeuristic = select_heuristic(WeightInfo);
+            
+        %% THIS IS WHERE WE LEFT OFF LAST
+
+        update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
+    end
+
     f(aafDistances, solnOut, u)
 
     answerBeforeHueristic2Opt = solnOut
@@ -178,16 +184,7 @@ function[] = TDRA( )
     % This is line 4 of Algorithm 1: Outline of the TDRA
     answerAfterHueristic2Opt = apply_heuristic_2_opt(solnOut, C0, aafDistances)
     afterResult = f(aafDistances, answerAfterHueristic2Opt, u)
-
-    
-
-    WeightInfo = weight_init();
-
-    Rmax = 10; 
-    for iIter = 1 : Rmax
-        nHeuristic = select_heuristic(WeightInfo);
-    end
-    
+ 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -351,9 +348,7 @@ function[ s_best ] = ...
     while T > TFinal
         for i = 1 : Imax 
             % Find neighbor to s
-            sPrime.anPart1 = neighbor(s);
-            
-
+            sPrime.anPart1 = neighbor(s);  
             
             % Check if neighbor is better than current solution 
             diff = fs_best - f(aafDistances, sPrime, u);
@@ -374,9 +369,6 @@ function[ s_best ] = ...
         % Cooling schedule
         T = Beta_SA * T; 
     end
-    
-    
-    
 end
 
 function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
@@ -1247,6 +1239,60 @@ function[ WeightInfo ] = weight_init()
     
 end
 
+function[ ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
+% In this function we update one slot of afScores and anTimes every time
+% this function is called. But we only update aafWeights every k iterations
+% (50, in this case)
+
+% Input
+%   WeightInfo          The variable WeightInfo is a data structure with
+%                        the following attributes: 
+%
+%    WeightInfo.afScores  : pi vector which represents the heuristic scores
+%    WeightInfo.anTimes   : theta vector which represents the number of
+%                            times each heuristic was used 
+%    WeightInfo.aafWeights: w_q,l array which represents the weight of
+%                            heuristic q (col) used in segment l (row)
+%    WeightInfo.fGamma    : a coefficient between 0 and 1 used to balance
+%                            between the value of earlier weights and the
+%                            new normalized scores
+%         .nSegmentCounter: current l; keeps track of the number of
+%                           iterations 
+% Output
+%
+    
+    % Local Variables
+    %  k                The segment length
+
+    % Initialize the segment length
+    k = 50; 
+
+    % Get the number of segments 
+    nDim = size(WeightInfo.aafWeights); 
+    l = nDim(2); 
+
+    % Update the afScores of the nHeuristic
+    if f_sPrime < f_sBest
+        WeightInfo.afScores(nHeuristic) = WeightInfo.afScores(nHeuristic) + 2; 
+    elseif f_sPrime <= f_sCurr
+        WeightInfo.afScores(nHeuristic) = WeightInfo.afScores(nHeuristic) + 1; 
+    end
+
+    % Update the anTimes 
+    WeightInfo.anTimes(nHeuristic) = WeightInfo.anTimes(nHeuristic) + 1; 
+
+    % Check to see if the nSegmentCounter is a multiple of k = 50
+    if mod(WeightInfo.nSegmentCounter, 50) == 0
+        % Update the weights of the heurisitic
+        WeightInfo.aafWeights(:, l+1) = ...
+            WeightInfo.aafWeights(:, l)*(1 - WeightInfo.fGamma) + ...
+            WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
+    end
+
+    % Update the segment counter
+    WeightInfo.nSegmentCounter = WeightInfo.nSegmentCounter + 1; 
+end
+
 function[ nHeuristic ] = select_heuristic( WeightInfo ) 
 % The select_heuristic function will take in a WeightInfo variable with a
 % structure with the attributes: scores, times, weights, gamma, and segment
@@ -1480,10 +1526,7 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
             iDroneCustomer = iDroneCustomer + 1; 
         end
         iDroneCustomer = iDroneCustomer + 1; 
-    end
-
-
-    
+    end 
     
     % Run algorithm
     for iteration = 1 : 10
@@ -1513,6 +1556,8 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
                     solnNew.anPart3(iDroneCustomer) = nRandi; 
                     solnNew.anPart4(iDroneCustomer) = nRands;
                     
+                    % Initialize P_jCopy2 to be the same thing as P_jCopy
+                    P_jCopy2 = P_jCopy; 
 
                     % Update P_jCopy according to the previously assigned flights to UAV_u
                     iTempRow = 1; 
@@ -1675,3 +1720,12 @@ function[ solnNew ] = apply_heuristic_3_opt( solnCurr, C0, aafDistances )
        end
    end
 end
+
+function[] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistances) 
+% This function will apply the greedy assignment heuristic to the input
+% solution. This will make a list of customers that are NOT at leaving OR
+% returning truck stops of drone flights (customers not at spots in parts 3
+% or 4). It will then pick one at random and choose the best spot for the
+% chosen customer. 
+end
+
