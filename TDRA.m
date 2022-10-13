@@ -105,19 +105,12 @@ function[] = TDRA( )
     % of the customers. 
     aafDistances = calculateDistances(C0.x, C0.y);
     
-    
     % Initialize solution data structure
     soln.anPart1 = zeros(1, length(C0.x));  % the Truck Route
     soln.anPart2 = [-1];  % Assignment of customers to UAVs
     soln.anPart3 = [-1];  % Launch locations of the UAVs
     soln.anPart4 = [-1];  % Reconvene locations of the UAVs
     
-    
-    % Generate initial solution s, to the STRPD based on SA
-    s = simulatedAnnealing(c, aafDistances, soln, T0, TFinal, Beta_SA, Imax, u);
-
-    % Plot the truck and drone route
-    plot_route( C0, s, 1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Test plotting our path with drones
     % THis is correct btw
@@ -148,32 +141,72 @@ function[] = TDRA( )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    % Initialize best solution, the rsult of the best solution, the 
-    % iteration number, and the temperature
-    s_best = s;
-    fs_best = f(aafDistances, s_best, u);
     
-    % Elliptical stuff
-    solnOut = ellipticalCustomerAssignment( s_best, C0, u);
+    %% Generate Initial Solution
+    % Generate initial solution s, to the STRPD based on SA
+    s = simulatedAnnealing(c, aafDistances, soln, T0, TFinal, Beta_SA, Imax, u);
+
+    % Run elliptical customer assignment on result of Simulated annealing
+    s = ellipticalCustomerAssignment( s, C0, u );
+
+    %% Intialize Values
+    % Initialize the best solution and the result of the best solution
+    s_best = s;
+    fs_best = f(aafDistances, s, u);
+    T = T0; 
+
+    %% Plot the truck and drone route
+    plot_route( C0, s, 1);
     
     % ALAN FIX THIS
     % The reason our plot isn't working too well is because for whatever
     % reason, the solnOut is choosing to return to a customer location that
     % is further away than the one it should be returning to . 
     hold on; 
-    plot_route( C0, solnOut, 4)
+    plot_route( C0, s_best, 4)
     hold off; 
     
+    % Initialize the weights before running main algorithm
     WeightInfo = weight_init();
 
     Rmax = 10; 
     for iIter = 1 : Rmax
         % Select a heuristic
         nHeuristic = select_heuristic(WeightInfo);
-            
-        %% THIS IS WHERE WE LEFT OFF LAST
+        
+        % Apply the selected heuristic to s
+        switch nHeuristic
+            case 1
+                s_prime = apply_heuristic_2_opt(s, C0, aafDistances); 
+                fs_prime = f(aafDistances, s_prime, u); 
+            case 2
+                s_prime = apply_heuristic_7_drone_planner(s, C0, aafDistances); 
+                fs_prime = f(aafDistances, s_prime, u); 
+            case 3 
+                s_prime = apply_heuristic_3_opt(s, C0, aafDistances); 
+                fs_prime = f(aafDistances, s_prime, u); 
+            case 4
+                s_prime = apply_heuristic_4_Greedy_Assignment(s, C0, aafDistances);  
+                fs_prime = f(aafDistances, s_prime, u); 
+            otherwise
+                fs_prime = 0; 
+        end
+        
+        % Check if new prime solution is better than best solution
+        if fs_prime < fs_best
+            s_best = s_prime; 
+            fs_best = fs_prime; 
+        end
 
-        update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
+        % If s_prim is accepted as new sol based on Boltzmann; Boltzmann probability time babbbyyyy 
+            diff = fs_best - f(aafDistances, s_prime, u);
+
+            if rand() < exp(-abs(diff) / T)
+                s = s_prime; 
+            end
+
+        % Update weights of heuristics
+        WeightInfo = update_weights( WeightInfo, nHeuristic, f_sPrime, fs_best, f_sCurr); 
     end
 
     f(aafDistances, solnOut, u)
@@ -913,6 +946,25 @@ function[ solnOut ] = ...
     solnOut.anPart4 = [ solnOut.anPart4 solnIn.anPart4(iLeavePlacement : end) ];       
 end
 
+function[ solnOut ] = soln_remove_drone_customer(solnIn, iCustomerToRemove)
+% This function removes the specified drone customer from the solution
+% (parts 2, 3, 4)
+    solnOut.anPart1 = solnIn.anPart1; 
+
+    iIndexNew = 0; 
+    for iIndexOrig = 1 : length( solnIn.anPart2 )
+        if solnIn.anPart2( iIndexOrig ) ~= iCustomerToRemove
+            iIndexNew = iIndexNew + 1; 
+            solnOut.anPart2( iIndexNew ) = solnIn.anPart2( iIndexOrig ); 
+            solnOut.anPart3( iIndexNew ) = solnIn.anPart3( iIndexOrig ); 
+            solnOut.anPart4( iIndexNew ) = solnIn.anPart4( iIndexOrig ); 
+        else
+            iRemovalIndex = iIndexOrig; 
+        end
+    end
+
+end
+
 function[ sPrime ] = neighbor( soln )
 % The neighbor function will implement the well-known 2-opt method for
 % creating neighbors for our current solution s. Here, we must note that
@@ -1239,7 +1291,7 @@ function[ WeightInfo ] = weight_init()
     
 end
 
-function[ ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
+function[ WeightInfo ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
 % In this function we update one slot of afScores and anTimes every time
 % this function is called. But we only update aafWeights every k iterations
 % (50, in this case)
@@ -1345,6 +1397,7 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
     end      
 end
 
+% Heuristic 1
 function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
 % This function will implement the 2-opt heuristic which will swap two
 % customers within the vector of Parts 1 and 2. The customers are selected
@@ -1454,6 +1507,7 @@ function[ solnNew ] = apply_heuristic_2_opt( solnCurr, C0, aafDistances )
    end
 end
 
+% Heuristic 2
 function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances) 
 % This function will apply the drone planner heuristic. 
 
@@ -1596,6 +1650,7 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
     end
 end
 
+% Heuristic 3
 function[ solnNew ] = apply_heuristic_3_opt( solnCurr, C0, aafDistances )
 % This function will implement the 2-opt heuristic which will swap two
 % customers within the vector of Parts 1 and 2. The customers are selected
@@ -1721,11 +1776,54 @@ function[ solnNew ] = apply_heuristic_3_opt( solnCurr, C0, aafDistances )
    end
 end
 
-function[] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistances) 
+% Heuristic 4
+function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistances) 
 % This function will apply the greedy assignment heuristic to the input
 % solution. This will make a list of customers that are NOT at leaving OR
 % returning truck stops of drone flights (customers not at spots in parts 3
 % or 4). It will then pick one at random and choose the best spot for the
 % chosen customer. 
+% Input
+%   solnIn       The input solution
+%   C0           The set of customers
+%   aafDistances Float matrix; calculated distances between nodes
+% Output
+%   solnNew      The output solution
+
+    % Local Variables
+
+    % Count the number of drones
+    if isempty(solnIn.anPart2)
+        nDrones = 0; 
+    else
+        nDrones = 1; 
+        i = 1; 
+        while i < length(solnIn.anPart2) 
+            if solnIn.anPart2(i) == -1 
+                nDrones = nDrones + 1; 
+            end
+            i = i + 1; 
+        end
+    end
+
+    % Initialize values
+    s_best = solnIn; 
+    fs_best = f(aafDistances, solnIn, nDrones); 
+
+    % Create a list of customers served by truck or UAV, but not served as
+    % rendevous locations
+    bLeavingOrReturning = ones(1, length(C0.x) - 2); % -2 for depots
+
+    % Loop through parts 3 and 4. Then mark each of those as a 0 in the
+    % boolean array
+    for iPart3 = 1 : length(solnIn.anPart3) 
+        if solnIn.anPart3(iPart3) ~= -1
+            %% LEFT OFF HERE
+        end
+    end
+
+
+
+
 end
 
