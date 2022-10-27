@@ -1,5 +1,62 @@
 function[ ] = test_components()
+
+    A = [1, 2, 3]; 
+
+    randIndex = randperm(length(A), 1); 
+
+    randIndex
     
+
+end
+
+function[ bValid ] = check_flight_validity( aafDistances, nLeaving, nVisiting, nReturning) 
+    
+    maxDistance = 10; 
+    alpha = 1.5;
+    bValid = 1; 
+    
+    % Calculate the distance from departure to the customer
+    a = aafDistances(nLeaving+1, nVisiting+1); 
+
+    % Calculate the distance from the customer to the returning
+    b = aafDistances(nVisiting+1, nReturning+1); 
+
+    % Total drone distance 
+    fDroneDistance = (a+b)/alpha; 
+
+    if fDroneDistance > maxDistance
+        bValid = 0; 
+    end
+    
+
+end
+
+
+function[ aafDistances ] = calculateDistances( x, y )
+% calculateDistances will calculate the distances between all the points 
+%   on the graph
+% INPUT
+%   x, y   the x and y coordinates of the customers
+% OUTPUT
+%   aafDistances   An array of distances where D_ij is the distance between 
+%                    house i and house j; this matrix should be symmetric
+
+    % Variables
+    %
+    
+    % Initialize the distances array
+    aafDistances = zeros(length(x));
+    
+    % Calculate the distances
+    for i = 1 : length(x)
+        for j = 1 : length(x)
+            aafDistances( i, j ) = sqrt( (x(i) - x(j))^2 + (y(i) - y(j))^2 );
+        end
+    end
+    
+end
+
+function[] = iforgor()
 
     % Drone 1, Customer 11, Leaving and Returning
 %     anDrones(1).CustomerSet( 2).aanCust = [0 10; 0 9; 0 8; 0 7; 0 6; 0 5; 0 4; 0 3; 0 2; 0 1; 0 0; 10 9; 6 0];
@@ -172,51 +229,3 @@ function[ ] = test_components()
 
 
 end
-
-function[ bValid ] = check_flight_validity( aafDistances, nLeaving, nVisiting, nReturning) 
-    
-    maxDistance = 10; 
-    alpha = 1.5;
-    bValid = 1; 
-    
-    % Calculate the distance from departure to the customer
-    a = aafDistances(nLeaving+1, nVisiting+1); 
-
-    % Calculate the distance from the customer to the returning
-    b = aafDistances(nVisiting+1, nReturning+1); 
-
-    % Total drone distance 
-    fDroneDistance = (a+b)/alpha; 
-
-    if fDroneDistance > maxDistance
-        bValid = 0; 
-    end
-    
-
-end
-
-
-function[ aafDistances ] = calculateDistances( x, y )
-% calculateDistances will calculate the distances between all the points 
-%   on the graph
-% INPUT
-%   x, y   the x and y coordinates of the customers
-% OUTPUT
-%   aafDistances   An array of distances where D_ij is the distance between 
-%                    house i and house j; this matrix should be symmetric
-
-    % Variables
-    %
-    
-    % Initialize the distances array
-    aafDistances = zeros(length(x));
-    
-    % Calculate the distances
-    for i = 1 : length(x)
-        for j = 1 : length(x)
-            aafDistances( i, j ) = sqrt( (x(i) - x(j))^2 + (y(i) - y(j))^2 );
-        end
-    end
-    
-end
-

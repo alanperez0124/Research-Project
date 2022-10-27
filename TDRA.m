@@ -166,6 +166,13 @@ function[] = TDRA( )
     plot_route( C0, s_best, 4)
     hold off; 
     
+    s
+
+    %% Test
+    solnOut = apply_heuristic_4_Greedy_Assignment(s, C0, aafDistances)
+    
+
+%% continue
     % Initialize the weights before running main algorithm
     WeightInfo = weight_init();
 
@@ -206,7 +213,7 @@ function[] = TDRA( )
             end
 
         % Update weights of heuristics
-        WeightInfo = update_weights( WeightInfo, nHeuristic, f_sPrime, fs_best, f_sCurr); 
+        WeightInfo = update_weights( WeightInfo, nHeuristic, fs_prime, fs_best, f_sCurr); 
     end
 
     f(aafDistances, solnOut, u)
@@ -446,8 +453,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
         D( iRow, 4 ) = C0.x(iRow);
         D( iRow, 5 ) = C0.y(iRow);
         D( iRow, 6 ) = 1;
-        
-
     end
     
     
@@ -620,15 +625,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
             
             % Select customer c_j in the list & remove it from truck route
             solnRemovedCustomer = soln_remove_truck_customer(solnIn, jCust);
-
-%             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
-%             solnIn.anPart1 = [0 10 9 8 7 3 5 6 0];
-%             solnIn.anPart3 = [ 1 6 -1 2 3 6];
-%             solnIn.anPart2 = [11 1 -1 12 4 2];
-%             solnIn.anPart4 = [3 7 -1 3 6 7];
-%             solnIn
-%             jCust = 8  % This is the customer we will be removing
-%             %%%%% TEMPORARY STUFF REMOVE AFTER TESTING %%%%%
             
             % Check all potential positions in truck route
             for iTruckStop = 2 : length(solnIn.anPart1) - 1
@@ -1791,6 +1787,12 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
 %   solnNew      The output solution
 
     % Local Variables
+    %   bLeavingOrReturning         Array of boolean vectors. 1's indicate
+    %                                   that they are rendezvous locations;
+    %                                   0's indicate that they are not
+    %       EX. [1 0 1] implies drone leaves cust 1 & goes back to cust 3
+    %   anTruckCustomers            Array of truck customers. This excludes
+    %                                   the depots. 
 
     % Count the number of drones
     if isempty(solnIn.anPart2)
@@ -1812,15 +1814,54 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
 
     % Create a list of customers served by truck or UAV, but not served as
     % rendevous locations
-    bLeavingOrReturning = ones(1, length(C0.x) - 2); % -2 for depots
+    bLeavingOrReturning = zeros(1, length(C0.x) - 2); % -2 for depots
 
-    % Loop through parts 3 and 4. Then mark each of those as a 0 in the
-    % boolean array
+    % Create array of truck customers 
+    anTruckCustomers = solnIn.anPart1(2 : end - 1); 
+
+    % Loop through parts 3 and 4. Then mark each of those as a 1 in the boolean array
     for iPart3 = 1 : length(solnIn.anPart3) 
-        if solnIn.anPart3(iPart3) ~= -1
-            %% LEFT OFF HERE
+        % if NOT switching to another drone and NOT a depot
+        if solnIn.anPart3(iPart3) ~= -1 && solnIn.anPart1(solnIn.anPart3(iPart3)) ~= 0
+            % Set their boolean value to true (indicating a rendezvous loc)
+            anTruckCustomers(solnIn.anPart3(iPart3) )
+            bLeavingOrReturning(anTruckCustomers(solnIn.anPart3(iPart3) - 1)) = 1; 
+        end
+
+        if solnIn.anPart4(iPart3) ~= -1 && solnIn.anPart1(solnIn.anPart4(iPart3))  ~= 0
+            % Set their boolean value to true (indicating a rendezvous loc)
+            anTruckCustomers(solnIn.anPart4(iPart3) - 1)
+            bLeavingOrReturning(anTruckCustomers(solnIn.anPart4(iPart3) - 1)) = 1; 
         end
     end
+
+    % Obtain list of all potential positions 
+    anValidCustomers = [anTruckCustomers]; 
+
+    % Add on the customers from part 2 that are not -1
+    for iCustomer = 1 : length(solnIn.anPart2)
+        if solnIn.anPart2(iCustomer) ~= -1
+            anValidCustomers = [anValidCustomers solnIn.anPart2(iCustomer)]; 
+        end
+    end
+
+    % Start taking away from that list if they are a rendezvous location
+    anValidCustomersCopy = anValidCustomers; 
+    for nCust = anValidCustomersCopy
+        if bLeavingOrReturning(nCust) == 1
+            anValidCustomers(nCust) = []; 
+        end
+    end
+
+    % Select a customer randomly from the list of valid customers
+    randIndex = randperm(length(anValidCustomers), 1); 
+    nRandCust = anValidCustomers(randIndex); 
+
+    % Remove it from its current route
+    %% Left off
+    
+
+    
 
 
 
