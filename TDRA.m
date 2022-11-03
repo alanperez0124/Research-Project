@@ -613,8 +613,6 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
 
     
 % if for one iteration of the repeat loop, doesn't improve. 
-
-
     while ~bDone 
         % Initialize the "previous" best waiting time
         fTotalWaitingTimePrev = fSolnOut; 
@@ -1853,13 +1851,73 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
         end
     end
 
-    % Select a customer randomly from the list of valid customers
+    % Select a customer randomly remove from the list of valid customers
     randIndex = randperm(length(anValidCustomers), 1); 
     nRandCust = anValidCustomers(randIndex); 
 
     % Remove it from its current route
-    %% Left off
+    %% Left off   
+    % Select customer c_j in the list & remove it from truck route
+    solnRemovedCustomer = soln_remove_truck_customer(solnIn, nRandCust);
     
+    % Check all potential positions in truck route
+    for iTruckStop = 2 : length(solnIn.anPart1) - 1
+        % Insert the customer in the truck route
+        insertedTruckSoln = ...
+            soln_insert_truck_customer(solnRemovedCustomer, nRandCust, iTruckStop);
+        
+        % Check feasibility 
+        % Totally checking feasibility, yep looks super great
+        bFeasible = check_feasibility(insertedTruckSoln, C0, aafDistances);           
+        
+        % Calculate the total waiting time
+        fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, nDrones ); 
+
+        % Compare this s to our original s_out
+        if bFeasible && (fTruckInsertionWaitingTime < fs_best)
+            solnOut = insertedTruckSoln; 
+            fs_best = fTruckInsertionWaitingTime; 
+        end
+    end
+
+    % Intialize feasibility for inserting customer into drone
+%             bFeasible = 1;  
+    
+    indexindexindex = 1;
+    % Check all potential positions in drone route
+    for iDrone = 1 : nDrones
+        for iStopLeave = 1 : length(solnRemovedCustomer.anPart1)
+            for iStopReturn = iStopLeave + 1 : length(solnRemovedCustomer.anPart1)
+                % Insert the customer in the truck route
+                insertedDroneSoln = ... 
+                    soln_add_drone_customer(solnRemovedCustomer,...
+                    nRandCust, iDrone, iStopLeave, iStopReturn);
+
+                % Check feasibility
+                bFeasible = check_feasibility(insertedDroneSoln, C0, aafDistances);
+
+                % Let's check what it looks like
+%                         hold on; 
+%                         plot_route( C0, insertedDroneSoln, indexindexindex)
+%                         hold off;
+                
+                % Calculate the total waiting time
+                % note: when calculating wait times, we are using
+                % the CURRENT soln.anPart1 
+                fDroneInsertionWaitingTime = f( aafDistances, insertedDroneSoln, nDrones); 
+
+                % Compare this to the solnOut
+                if bFeasible && (fDroneInsertionWaitingTime < fs_best)
+                    solnOut = insertedDroneSoln; 
+                    fs_best = fDroneInsertionWaitingTime; 
+                end
+
+                indexindexindex = indexindexindex + 1; 
+            end
+        end
+    end
+        
+    solnNew = solnOut;
 
     
 
