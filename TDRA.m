@@ -99,6 +99,7 @@ function[] = TDRA( )
     TFinal = 0.01; 
     Beta_SA = 0.99;
     Imax = 20;
+    fBoltzmannThresh = 0.8; 
     
     % Calculate the distances between each all points
     % Here, our first row of the columns is how far our depot is from each 
@@ -206,14 +207,18 @@ function[] = TDRA( )
         end
 
         % If s_prim is accepted as new sol based on Boltzmann; Boltzmann probability time babbbyyyy 
-            diff = fs_best - f(aafDistances, s_prime, u);
+        diff = fs_best - f(aafDistances, s_prime, u);
 
-            if rand() < exp(-abs(diff) / T)
-                s = s_prime; 
-            end
+%         if rand() < exp(-abs(diff) / T)
+        if exp(-abs(diff) / T) < fBoltzmannThresh
+            s = s_prime; 
+        end
+
+        % Get the current value
+        fs_Curr = f(aafDistances, s, u); 
 
         % Update weights of heuristics
-        WeightInfo = update_weights( WeightInfo, nHeuristic, fs_prime, fs_best, f_sCurr); 
+        WeightInfo = update_weights( WeightInfo, nHeuristic, fs_prime, fs_best, fs_Curr ); 
     end
 
     f(aafDistances, solnOut, u)
@@ -371,7 +376,10 @@ function[ s_best ] = ...
     
 
     % Initialize our current and final temperatures
-    T = T0;     
+    T = T0;    
+
+    % Initialize boltzmann threshold
+    fBoltzmannThresh = 0.8; 
     
     % Generate a ranomd TRP (Traveling Repairman Problem) 
     % randomly insert all customers into vector    
@@ -400,7 +408,7 @@ function[ s_best ] = ...
             end
             
             % Boltzmann probability time babbbyyyy
-            if rand() < exp(-abs(diff) / T)
+            if exp(-abs(diff) / T) < fBoltzmannThresh
                 s.anPart1 = sPrime.anPart1;
             end
             
@@ -768,6 +776,9 @@ function[ solnOut ] = soln_remove_truck_customer(solnIn, jCust)
     %  iCustomer     counter variable to keep track of the customer index
     %  
     
+    % Initialize jCustIndex to end + 1
+    jCustIndex = length(solnIn.anPart1) + 1; 
+
     % Loop over soln.anPart1 to find jCust
     for iCustomer = 1 : length(solnIn.anPart1)
         if solnIn.anPart1(iCustomer) == jCust
@@ -1274,7 +1285,7 @@ function[ WeightInfo ] = weight_init()
     %                       the code; 
 
     % Number of heuristics
-    numHeuristics = 3; 
+    numHeuristics = 4; 
     
     % Initialize WeightInfo
     WeightInfo.afScores = zeros(1, numHeuristics); % 2 heuristics 
@@ -1328,11 +1339,17 @@ function[ WeightInfo ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBe
     WeightInfo.anTimes(nHeuristic) = WeightInfo.anTimes(nHeuristic) + 1; 
 
     % Check to see if the nSegmentCounter is a multiple of k = 50
+%     if mod(WeightInfo.nSegmentCounter, 50) == 0
+%         % Update the weights of the heurisitic
+%         WeightInfo.aafWeights(:, l+1) = ...
+%             WeightInfo.aafWeights(:, l)*(1 - WeightInfo.fGamma) + ...
+%             WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
+%     end
     if mod(WeightInfo.nSegmentCounter, 50) == 0
         % Update the weights of the heurisitic
-        WeightInfo.aafWeights(:, l+1) = ...
-            WeightInfo.aafWeights(:, l)*(1 - WeightInfo.fGamma) + ...
-            WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
+        WeightInfo.aafWeights(l+1, :) = ...
+        WeightInfo.aafWeights(l, :)*(1 - WeightInfo.fGamma) + ...
+        WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
     end
 
     % Update the segment counter
@@ -1362,6 +1379,8 @@ function[ nHeuristic ] = select_heuristic( WeightInfo )
 
     % Calculate the size
     anSize = size(WeightInfo.aafWeights);
+
+    %% ERROR ERROR ERROR 
 
     % Calculate vector of probabilities
     fHeuristicWeightSum = 0; 
@@ -1642,6 +1661,12 @@ function[ solnNew ] = apply_heuristic_7_drone_planner(solnIn, C0, aafDistances)
             iDrone = iDrone + 1; 
         end
     end
+
+    %% Potential issue for feasibility
+    % Our drone planner will likely return parts 3 and 4 out of order
+    % (making it pop up as infeasible in our check_feasibility function)
+    % so we can fix this by fixing our output so that our drone routes are
+    % in proper order
 end
 
 % Heuristic 3
@@ -1807,7 +1832,7 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
     end
 
     % Initialize values
-    s_best = solnIn; 
+    solnNew = solnIn; 
     fs_best = f(aafDistances, solnIn, nDrones); 
 
     % Create a list of customers served by truck or UAV, but not served as
@@ -1855,8 +1880,7 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
     randIndex = randperm(length(anValidCustomers), 1); 
     nRandCust = anValidCustomers(randIndex); 
 
-    % Remove it from its current route
-    %% Left off   
+    % Remove it from its current route  
     % Select customer c_j in the list & remove it from truck route
     solnRemovedCustomer = soln_remove_truck_customer(solnIn, nRandCust);
     
@@ -1875,7 +1899,7 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
 
         % Compare this s to our original s_out
         if bFeasible && (fTruckInsertionWaitingTime < fs_best)
-            solnOut = insertedTruckSoln; 
+            solnNew = insertedTruckSoln; 
             fs_best = fTruckInsertionWaitingTime; 
         end
     end
@@ -1908,7 +1932,7 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
 
                 % Compare this to the solnOut
                 if bFeasible && (fDroneInsertionWaitingTime < fs_best)
-                    solnOut = insertedDroneSoln; 
+                    solnNew = insertedDroneSoln; 
                     fs_best = fDroneInsertionWaitingTime; 
                 end
 
@@ -1916,13 +1940,5 @@ function[ solnNew] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistance
             end
         end
     end
-        
-    solnNew = solnOut;
-
-    
-
-
-
-
 end
 
