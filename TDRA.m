@@ -218,7 +218,7 @@ function[] = TDRA( )
         fs_Curr = f(aafDistances, s, u); 
 
         % Update weights of heuristics
-        WeightInfo = update_weights( WeightInfo, nHeuristic, fs_prime, fs_best, fs_Curr ); 
+        WeightInfo = update_weights( WeightInfo, nHeuristic, fs_prime, fs_best, fs_Curr, iIter); 
     end
 
     f(aafDistances, solnOut, u)
@@ -1296,7 +1296,7 @@ function[ WeightInfo ] = weight_init()
     
 end
 
-function[ WeightInfo ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr)
+function[ WeightInfo ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBest, f_sCurr, iIter)
 % In this function we update one slot of afScores and anTimes every time
 % this function is called. But we only update aafWeights every k iterations
 % (50, in this case)
@@ -1345,15 +1345,15 @@ function[ WeightInfo ] = update_weights( WeightInfo, nHeuristic, f_sPrime, f_sBe
 %             WeightInfo.aafWeights(:, l)*(1 - WeightInfo.fGamma) + ...
 %             WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
 %     end
-    if mod(WeightInfo.nSegmentCounter, 50) == 0
+    if mod(iIter, 50) == 0
         % Update the weights of the heurisitic
         WeightInfo.aafWeights(l+1, :) = ...
         WeightInfo.aafWeights(l, :)*(1 - WeightInfo.fGamma) + ...
         WeightInfo.fGamma*(WeightInfo.afScores / WeightInfo.anTimes);
-    end
 
-    % Update the segment counter
-    WeightInfo.nSegmentCounter = WeightInfo.nSegmentCounter + 1; 
+        % Update the segment counter
+        WeightInfo.nSegmentCounter = WeightInfo.nSegmentCounter + 1;  
+    end   
 end
 
 function[ nHeuristic ] = select_heuristic( WeightInfo ) 
