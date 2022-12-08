@@ -169,11 +169,9 @@ function[] = TDRA( )
     
     s
 
-    %% Test
     solnOut = apply_heuristic_4_Greedy_Assignment(s, C0, aafDistances)
     
 
-%% continue
     % Initialize the weights before running main algorithm
     WeightInfo = weight_init();
 
@@ -530,12 +528,18 @@ function[ solnOut ] = ellipticalCustomerAssignment( solnIn, C0, k )
                
     
     % Plot the points
-    figure(12345)
+    figure()
     hold on; 
     plot(C0.x, C0.y, 'bo')
     plot(afXGoodData, afYDataPositive, 'r-')
     plot(afXGoodData, afYDataNegative, 'r-')
     
+    % Create another plot to overlay
+    figure(12345)
+    hold on; 
+    plot(C0.x, C0.y, 'bo')
+    plot(afXGoodData, afYDataPositive, 'r-')
+    plot(afXGoodData, afYDataNegative, 'r-')
 
     
     % Given a customer point (xi, yi), find the point (x, y) on an ellipse
@@ -1872,12 +1876,14 @@ function[ solnNew ] = apply_heuristic_4_Greedy_Assignment(solnIn, C0, aafDistanc
     end
 
     % Start taking away from that list if they are a rendezvous location
-    anValidCustomersCopy = anValidCustomers; 
-    for nCust = anValidCustomersCopy
-        if bLeavingOrReturning(nCust) == 1
-            anValidCustomers(nCust) = []; 
-        end
-    end
+%     anValidCustomersCopy = anValidCustomers; 
+%     for nCust = anValidCustomersCopy
+%         if bLeavingOrReturning(nCust) == 1
+%             anValidCustomers(nCust) = []; 
+%         end
+%     end
+
+    anValidCustomers = anValidCustomers(bLeavingOrReturning > 0); 
 
     % Select a customer randomly remove from the list of valid customers
     randIndex = randperm(length(anValidCustomers), 1); 
@@ -1952,7 +1958,7 @@ function[ solnNew ] = apply_heuristic_5_Origin_Destination(solnIn, C0, aafDistan
 % insert customer i and save that as s'. It will then apply drone planner
 % on that solution and check if the solution is feasible. 
 % Input
-%
+%   k       The number of drones
 % Output
 %
 
@@ -1967,43 +1973,63 @@ function[ solnNew ] = apply_heuristic_5_Origin_Destination(solnIn, C0, aafDistan
     % Store it as the best
     fSolnBet = fSolnIn; 
 
-    % Create list of all rendezvous location customers (UAV & TRUCK)
+    % Create list of all non-rendezvous locations
     bLeavingOrReturning = zeros(1, length(C0.x) - 2); %-2 for depots
 
     % Create array of truck customers
-    anTruckCustomers = solnIn.anPart1(2 : end - 1); 
+%     anTruckCustomers = solnIn.anPart1(2 : end - 1); 
+    anListTruckCust = []; 
 
     % Loop through parts 3 and 4. Mark each of those as a 1 in bool array
+    nIndex = 1; 
     for iPart3 = 1 : length(solnIn.anPart3)
         % if NOT switching to another drone and NOT a depot
         if solnIn.anPart3(iPart3) ~= -1 && solnIn.anPart1(solnIn.anPart3(iPart3)) ~= 0 
             % Set their boolean value to true (indicating a rendezvous loc)
-            anTruckCustomers(solnIn.anPart3(iPart3))
-            bLeavingOrReturning(anTruckCustomers(solnIn.anPart3(iPart3) - 1)) = 1; 
+%             anTruckCustomers(solnIn.anPart3(iPart3))
+            solnIn.anPart1(solnIn.anPart3(iPart3))
+%             bLeavingOrReturning(solnIn.anPart1(solnIn.anPart3(iPart3) - 1)) = 1; 
+            bLeavingOrReturning(solnIn.anPart1(solnIn.anPart3(iPart3))) = 1; 
+
+            % Add to list of rendezvous truck locations
+            anListTruckCust(nIndex) = solnIn.anPart1(solnIn.anPart3(iPart3)); 
+
+            % Increment index
+            nIndex = nIndex + 1; 
         end
 
         % if NOT switching to another drone and NOT a depot
         if solnIn.anPart4(iPart3) ~= -1 && solnIn.anPart1(solnIn.anPart4(iPart3)) ~= 0
             % Set their boolean value to true (indicating a rendevous loc)
-            anTruckCustomers(solnIn.anPart4(iPart3) - 1)
-            bLeavingOrReturning(anTruckCustomers(solnIn.anPart4(iPart3) - 1)) = 1; 
+%             anTruckCustomers(solnIn.anPart4(iPart3) - 1)
+            solnIn.anPart1(solnIn.anPart4(iPart3))
+%             bLeavingOrReturning(solnIn.anPart1(solnIn.anPart4(iPart3) - 1)) = 1; 
+            bLeavingOrReturning(solnIn.anPart1(solnIn.anPart4(iPart3))) = 1; 
+
+            % Add to list of rendezvous truck locations
+            anListTruckCust(nIndex) = solnIn.anPart1(solnIn.anPart4(iPart3)); 
+
+            % Increment index
+            nIndex = nIndex + 1; 
         end
     end
    
-    % Obtain 
-    anValidCustomers = [anTruckCustomers]; 
-
-    % Start taking away from that list if they are not rendezvous locations
-    anValidCustomersCopy = anValidCustomers; 
-    for nCust = anValidCustomersCopy
-        if bLeavingOrReturning(nCust) == 1
-            anValidCustomers(nCust) = []; 
-        end
-    end
+%     % Obtain list of customer rendezvous locations
+%     anValidCustomers = [anTruckCustomers]; 
+% 
+%     % Start taking away from that list if they are not rendezvous locations
+%     anValidCustomersCopy = anValidCustomers; 
+%     for nCust = anValidCustomersCopy
+%         if bLeavingOrReturning(nCust) == 1
+%             anValidCustomers(nCust) = []; 
+%         end
+%     end
 
     % Select a customer randomly from the list & remove from its route
-    randIndex = randperm(length(anValidCustomers), 1); 
-    nRandCust = anValidCustomers(randIndex); 
+    randIndex = randi([1 length(anListTruckCust)]); 
+    nRandCust = anListTruckCust(randIndex); 
+%     randIndex = randperm(length(anListTruckCust), 1); 
+%     nRandCust = anValidCustomers(randIndex); 
 
     % Select customer c_j in the list & remove it from truck route
     solnRemovedCustomer = soln_remove_truck_customer(solnIn, nRandCust);
@@ -2014,12 +2040,15 @@ function[ solnNew ] = apply_heuristic_5_Origin_Destination(solnIn, C0, aafDistan
         insertedTruckSoln = ...
             soln_insert_truck_customer(solnRemovedCustomer, nRandCust, iTruckStop);
         
+        % Apply drone planner heuristic 
+
+
         % Check feasibility 
         % Totally checking feasibility, yep looks super great
         bFeasible = check_feasibility(insertedTruckSoln, C0, aafDistances);           
         
         % Calculate the total waiting time
-        fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, nDrones ); 
+        fTruckInsertionWaitingTime = f( aafDistances, insertedTruckSoln, k ); 
 
         % Compare this s to our original s_out
         if bFeasible && (fTruckInsertionWaitingTime < fs_best)

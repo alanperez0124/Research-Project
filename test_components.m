@@ -1,10 +1,19 @@
 function[ ] = test_components()
 
-    A = [1, 2, 3]; 
+    x = [1 2 3 4 5 6 7 8]; 
 
-    randIndex = randperm(length(A), 1); 
+    y = [0 0 1 0 0 1]; 
 
-    randIndex
+%     x = x(y > 0); 
+x = [9]; 
+
+    idx1 = randi([1 length(x)]); 
+
+    idx1
+
+
+
+
     
 
 end
